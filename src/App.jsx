@@ -39,7 +39,6 @@ export default function App() {
 
   let currentTripData = itineraries[selectedTrip] || [];
 
-  // Global Search Filter
   if (searchQuery.trim() !== '') {
     const lowerQuery = searchQuery.toLowerCase();
     currentTripData = currentTripData.filter(item => 
@@ -53,7 +52,6 @@ export default function App() {
   const todoData = currentTripData.filter(item => item.day.toLowerCase().includes('to do'));
   let itineraryData = currentTripData.filter(item => !item.day.toLowerCase().includes('to do'));
 
-  // Helper to get item category type
   const getCategory = (text) => {
     const t = text.toLowerCase();
     if (t.includes('hotel') || t.includes('motel') || t.includes('airbnb')) return 'Hotel';
@@ -65,7 +63,6 @@ export default function App() {
     return 'Other';
   };
 
-  // Category Filter Pill logic
   if (selectedCategory !== 'All') {
     itineraryData = itineraryData.filter(item => getCategory(item.activity) === selectedCategory);
   }
@@ -100,7 +97,6 @@ export default function App() {
     setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '' });
   };
 
-  // Calculate total tracked expenses/costs if present
   const totalBudget = currentTripData.reduce((acc, item) => {
     const val = parseFloat(item.cost || 0);
     return acc + (isNaN(val) ? 0 : val);
@@ -110,9 +106,17 @@ export default function App() {
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800 pb-24">
       
       {/* Hero Cover Image */}
-      <div className="relative h-64 md:h-80 w-full bg-slate-800 overflow-hidden">
+      <div className="relative h-64 md:h-80 w-full bg-slate-900 overflow-hidden">
         <img 
-          src={`https://source.unsplash.com/1600x900/?${selectedTrip.replace(/ /g, ',')},travel`} 
+          src={
+            selectedTrip.toLowerCase().includes('usa') ? "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80" :
+            selectedTrip.toLowerCase().includes('prague') ? "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=80" :
+            selectedTrip.toLowerCase().includes('paris') ? "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1600&q=80" :
+            selectedTrip.toLowerCase().includes('milan') ? "https://images.unsplash.com/photo-1520485647539-516b3226a254?auto=format&fit=crop&w=1600&q=80" :
+            selectedTrip.toLowerCase().includes('venice') ? "https://images.unsplash.com/photo-1514896856981-09c366f7cae2?auto=format&fit=crop&w=1600&q=80" :
+            selectedTrip.toLowerCase().includes('thailand') ? "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=1600&q=80" :
+            "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1600&q=80"
+          } 
           alt="Destination Cover"
           className="w-full h-full object-cover opacity-60"
         />
@@ -229,7 +233,6 @@ export default function App() {
                             </div>
                           </div>
                           
-                          {/* Clickable Google Maps Link */}
                           {item.location && (
                             <a 
                               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}`} 
@@ -241,7 +244,6 @@ export default function App() {
                             </a>
                           )}
                           
-                          {/* Collapsible Notes */}
                           {item.notes && (
                             <div className="mt-3 text-sm text-gray-600 bg-white p-3 rounded-xl border border-gray-100 leading-relaxed">
                               <p className={!isExpanded && isLongNote ? "line-clamp-2 italic" : "italic"}>
