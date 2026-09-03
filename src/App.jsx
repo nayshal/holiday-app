@@ -120,7 +120,17 @@ export default function App() {
     return '📌';
   };
 
-  // SMART MAP URL BUILDER: Generates Directions URL if "X to Y", or Search URL if standard place
+  // Dynamically resolve hotel names/addresses from trip data so directions don't fail on ambiguous terms like "Hotel"
+  const findHotelAddress = () => {
+    const hotelItem = currentTripData.find(item => getCategory(item.activity) === 'Hotel' || item.activity.toLowerCase().includes('hotel') || item.activity.toLowerCase().includes('motel'));
+    if (hotelItem) {
+      if (hotelItem.location && hotelItem.location.trim() !== '') return hotelItem.location;
+      return hotelItem.activity;
+    }
+    return `${selectedTrip.replace(/_/g, ' ')} hotel`;
+  };
+
+  // ADVANCED MAP URL BUILDER: Resolves generic terms like "Hotel" and appends city context for precise Google Maps routing
   const getMapLinkData = (item) => {
     const rawLoc = item.location && item.location.trim() !== '' && !item.location.toLowerCase().includes('drive') 
       ? item.location 
@@ -129,32 +139,52 @@ export default function App() {
     if (!rawLoc) return null;
     const lower = rawLoc.toLowerCase();
 
-    // Filter out useless non-location text
     const ignoreList = ['do', 'lunch and a walk', 'prep for clothes', 'chill at hotel', 'then go for dinner and relax'];
     if (ignoreList.includes(lower)) return null;
 
+    const tripCity = selectedTrip.replace(/_/g, ' ');
+    const hotelAddress = findHotelAddress();
+
     if (rawLoc.toLowerCase().includes(' to ')) {
       const parts = rawLoc.split(/ to /i);
-      const origin = parts[0].replace(/^(drive to|stay at|visit)\s+/i, '').trim();
-      const dest = parts[parts.length - 1].trim();
+      let origin = parts[0].replace(/^(drive to|stay at|visit)\s+/i, '').trim();
+      let dest = parts[parts.length - 1].trim();
+
+      if (origin.toLowerCase() === 'hotel' || origin.toLowerCase() === 'motel' || origin.toLowerCase() === 'the hotel') {
+        origin = hotelAddress;
+      }
+      if (dest.toLowerCase() === 'hotel' || dest.toLowerCase() === 'motel' || dest.toLowerCase() === 'the hotel') {
+        dest = hotelAddress;
+      }
+
+      if (!origin.toLowerCase().includes(tripCity.toLowerCase())) {
+        origin = `${origin}, ${tripCity}`;
+      }
+      if (!dest.toLowerCase().includes(tripCity.toLowerCase())) {
+        dest = `${dest}, ${tripCity}`;
+      }
+
       return {
         label: rawLoc,
         url: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}`
       };
     }
 
-    let cleanQuery = rawLoc.replace(/^(drive to|stay at|visit|dinner at|lunch at|breakfast at|flight to|arrive at|check in at|stop at)\s+/i, '');
+    let cleanQuery = rawLoc.replace(/^(drive to|stay at|visit|dinner at|lunch at|breakfast at|flight to|arrive at|check in at|stop at)\s+/i, '').trim();
     if (cleanQuery.toLowerCase() === 'hotel' || cleanQuery.toLowerCase() === 'motel') {
-      cleanQuery = `${selectedTrip.replace(/_/g, ' ')} hotel`;
+      cleanQuery = hotelAddress;
+    }
+
+    if (!cleanQuery.toLowerCase().includes(tripCity.toLowerCase())) {
+      cleanQuery = `${cleanQuery}, ${tripCity}`;
     }
 
     return {
-      label: cleanQuery,
+      label: rawLoc,
       url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanQuery)}`
     };
   };
 
-  // Simulated Automated Route Leg Calculation
   const getRouteLegEstimate = (index, arr) => {
     if (index === 0) return null;
     const prev = arr[index - 1];
