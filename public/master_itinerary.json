@@ -1,0 +1,2030 @@
+{
+    "USA road trip planning": [
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book dinner for 22nd near hotel ",
+            "location": "LA",
+            "notes": "Order uber eats"
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Find breakfast place for 23rd ",
+            "location": "LA",
+            "notes": "The breakfast club LA"
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Find supermarket for food shopping ",
+            "location": "LA",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book universal studio tickets",
+            "location": "LA",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Find dinner near LA Lakers game on 24th ",
+            "location": "LA",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Find shopping places in San Fran 25th March",
+            "location": "San Fran",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Find rooftop bar and restaurant for 25th March ",
+            "location": "San Fran",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book alcatraz tour for 26th March ",
+            "location": "San Fran",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Find chilled dinner near baseball stadium",
+            "location": "San Fran",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book wineary for 27th ",
+            "location": "Napa ",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Find dinner place for 27th ",
+            "location": "Napa ",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Find supermarket for Vegas drive",
+            "location": "Napa ",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book dinners for Vegas",
+            "location": "Vegas",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Research pool parties for 31st March",
+            "location": "Vegas",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book 1st April activities",
+            "location": "Vegas",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Find supermarket for 2nd April - San Diego",
+            "location": "Vegas",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book shooting range on 30th March",
+            "location": "Vegas",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book bearzonia for 2nd April ",
+            "location": "Grand Canyon",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book antelope tour 3rd April ",
+            "location": "Grand Canyon",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book skydive 3rd April",
+            "location": "Grand Canyon",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book san diego zoo on 4th April",
+            "location": "San Diego",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Book anniversary dinner and rooftop bar 5th April ",
+            "location": "LA",
+            "notes": ""
+        },
+        {
+            "day": "To do List",
+            "time": "",
+            "activity": "Research fun shopping/outlets in all locations ",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:18:00",
+            "activity": "Drive to hotel 24 Hours Motel, 5857 Crenshaw Blvd, Los Angeles, CA 90043, United States",
+            "location": "LAX airport drive to hotel",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:17:00",
+            "activity": "Walmart (Walmart Neighborhood Market, 14441 S Inglewood Ave, Hawthorne, CA 90250, United States)",
+            "location": "Hotel to Walmart",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:27:00",
+            "activity": "The Breakfast Club LA, 1600 Vine St, Hollywood, CA 90028, United States",
+            "location": "Walmart to The Breakfast Club",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:30:00",
+            "activity": "Visit Griffith Observatory, 2800 E Observatory Rd, Los Angeles, CA 90027, United States",
+            "location": "Hotel to the Observatory",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:11:00",
+            "activity": "Go to the Hollywood Walk of Fame, Hollywood Boulevard, Vine St, Los Angeles, CA 90028, United States",
+            "location": "Griffith to Walk of Fame",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:25:00",
+            "activity": "Walk to venice Beach boardwalk",
+            "location": "Walk of Fame to Venice Beach",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:30:00",
+            "activity": "Santa monica pier",
+            "location": "Venice Beach to Santa Monica Pier",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:18:00",
+            "activity": "Santa Monica Pier, 200 Santa Monica Pier, Santa Monica, CA 90401, United States to 24 Hours Motel, 5857 Crenshaw Blvd, Los Angeles, CA 90043, United States",
+            "location": "Santa Monica Pier to Hotel",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:15:00",
+            "activity": "hotel to food go to Grand Central Market, 317 S Broadway, Los Angeles, CA 90013, United States",
+            "location": "Hotel to Grand Central Market",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:23:00",
+            "activity": "Go to Universal Studios Hollywood",
+            "location": "Hotel to Universal Studios",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:15:00",
+            "activity": "go to Los Angeles County Museum of Art, 5905 Wilshire Blvd, Los Angeles, CA 90036, United States",
+            "location": "Universal Studios to Country Museum",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:10:00",
+            "activity": "Shopping at Rodeo Dr, Beverly Hills, CA, USA",
+            "location": "Country Museum to Rodeo Dr",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:14:00",
+            "activity": "Food and bar near Crypto.com Arena, 1111 S Figueroa St, Los Angeles, CA 90015, United States",
+            "location": "Hotel to LA Stadium",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:14:00",
+            "activity": "Evening LA Lakers Game to Hotel",
+            "location": "LA Stadium to Hotel",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:09:00",
+            "activity": "Sprouts Farmers Market, 5660 Sepulveda Blvd, Culver City, CA 90230, United States",
+            "location": "Hotel to Sprouts",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:10:00",
+            "activity": "Costco Wholesale, 13463 Washington Blvd, Marina Del Rey, CA 90292, United States",
+            "location": "Sprouts to Costco (Fuel)",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:25:00",
+            "activity": "Malibu, California, USA",
+            "location": "Costco to Malibu",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "05:24:00",
+            "activity": "22330 Hathaway Ave, Hayward, CA 94541, USA",
+            "location": "Malibu to Costco (Fuel)",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "00:26:00",
+            "activity": "240 7th St, San Francisco, CA 94103, USA",
+            "location": "Costco to San Fran Hotel",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "",
+            "activity": "go to lunch and a walk",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "",
+            "activity": "shopping and whatever rads wants to do",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "LA",
+            "time": "",
+            "activity": "rooftop bar and nice dinner",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "00:09:00",
+            "activity": "Sprouts Farmers Market, 5660 Sepulveda Blvd, Culver City, CA 90230, United States",
+            "location": "Hotel to Sprouts",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "00:10:00",
+            "activity": "Costco Wholesale, 13463 Washington Blvd, Marina Del Rey, CA 90292, United States",
+            "location": "Sprouts to Costco (Fuel)",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "00:25:00",
+            "activity": "Malibu, California, USA",
+            "location": "Costco to Malibu",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "05:24:00",
+            "activity": "22330 Hathaway Ave, Hayward, CA 94541, USA",
+            "location": "Malibu to Costco (Fuel)",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "00:26:00",
+            "activity": "240 7th St, San Francisco, CA 94103, USA",
+            "location": "Costco to San Fran Hotel",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "",
+            "activity": "go to lunch and a walk",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "",
+            "activity": "shopping and whatever rads wants to do",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "",
+            "activity": "rooftop bar and nice dinner",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "",
+            "activity": "go to alcatraz (need to book tour)",
+            "location": "city centre inn and suites",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "",
+            "activity": "go to view points for golden gates",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "",
+            "activity": "go to San Francisco Giants vs. Oakland Athletics (5:05pm)",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "",
+            "activity": "go for chilled dinner",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "SF",
+            "time": "00:47:00",
+            "activity": "Hawthorn Suites by Wyndham Napa Valley, 314 Soscol Ave, Napa, CA 94559, United States",
+            "location": "Drive to Napa Valley Hotel ",
+            "notes": ""
+        },
+        {
+            "day": "Napa",
+            "time": "",
+            "activity": "change and go to winery",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Napa",
+            "time": "",
+            "activity": "come back and pool and chill",
+            "location": "Hawthorn Suites by Wyndham Napa Valley, 314 Soscol Ave, Napa, CA 94559, United States",
+            "notes": ""
+        },
+        {
+            "day": "Napa",
+            "time": "",
+            "activity": "go for a nice dinner, prep for clothes",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Napa",
+            "time": "04:16:00",
+            "activity": "Glacier Point, California, United States",
+            "location": "drive to yosemite in the morning",
+            "notes": ""
+        },
+        {
+            "day": "Yosemite",
+            "time": "04:16:00",
+            "activity": "Glacier Point, California, United States",
+            "location": "Drive to yosemite in the morning from Napa Hotel",
+            "notes": ""
+        },
+        {
+            "day": "Yosemite",
+            "time": "01:05:00",
+            "activity": "Yosemite Southgate Hotel and Suites, 40644 CA-41, Oakhurst, CA 93644, United States",
+            "location": "get to yosemite southgate hotels and suites from glaciers point",
+            "notes": ""
+        },
+        {
+            "day": "Yosemite",
+            "time": "",
+            "activity": "check in and chill at hotel ",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Yosemite",
+            "time": "",
+            "activity": "then go for dinner and relax ",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Yosemite",
+            "time": "02:20:00",
+            "activity": "Costco Gas Station, 3800 Rosedale Hwy, Bakersfield, CA 93308, United States",
+            "location": "Drive to Costco (Fuel) Bakersfield",
+            "notes": ""
+        },
+        {
+            "day": "Yosemite",
+            "time": "04:07:00",
+            "activity": "Horseshoe Las Vegas, 3645 Las Vegas Blvd S, Las Vegas, NV 89109, United States",
+            "location": "Drive to Vegas from Costco Bakersfield",
+            "notes": ""
+        },
+        {
+            "day": "Yosemite",
+            "time": "",
+            "activity": "dinner and bar near stadium",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Yosemite",
+            "time": "",
+            "activity": "go to concert (trey songz) evening 8pm",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Yosemite",
+            "time": "",
+            "activity": "go for a bars",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "02:20:00",
+            "activity": "Costco Gas Station, 3800 Rosedale Hwy, Bakersfield, CA 93308, United States",
+            "location": "Drive to Costco (Fuel) Bakersfield",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "04:07:00",
+            "activity": "Horseshoe Las Vegas, 3645 Las Vegas Blvd S, Las Vegas, NV 89109, United States",
+            "location": "Drive to Vegas from Costco Bakersfield",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "Dinner and bars near stadium",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "go to concert (trey songz) evening 8pm",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "go for a bars",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "get up late and chill in the morning",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "afternoon go get some lunch and walk to old vegas shooting range",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "evening go for dinner and proper night out",
+            "location": " ",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "chill by pool and relax day and ",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "pool party or whatever",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "Casinos",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "sphere show at 2:30pm",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "dinner as well",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "",
+            "activity": "Sort lunch out for the next few days in grand canyon",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "04:39:00",
+            "activity": "do the south rim tour",
+            "location": "Costco and drive to GRAND CANYON SOUTH RIM",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "01:34:00",
+            "activity": "Bearizona Wildlife Park, 1500 E Rte 66, Williams, AZ 86046, United States",
+            "location": "From South Rim go to Bearzonia",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "00:40:00",
+            "activity": "Fry's Fuel Center, 199 N Switzer Canyon Dr, Flagstaff, AZ 86001, United States",
+            "location": "Bearzonia to Fuel ",
+            "notes": ""
+        },
+        {
+            "day": "Vegas",
+            "time": "00:04:00",
+            "activity": "Super 8 by Wyndham NAU/Downtown ",
+            "location": "Fuel to Hotel",
+            "notes": ""
+        },
+        {
+            "day": "Grand Canyon",
+            "time": "00:20:00",
+            "activity": "791 Marks St, Henderson, NV 89014, USA",
+            "location": "Ceasars palace to Costco",
+            "notes": ""
+        },
+        {
+            "day": "Grand Canyon",
+            "time": "04:39:00",
+            "activity": "do the south rim tour",
+            "location": "Costco and drive to GRAND CANYON SOUTH RIM",
+            "notes": ""
+        },
+        {
+            "day": "Grand Canyon",
+            "time": "01:34:00",
+            "activity": "Bearizona Wildlife Park, 1500 E Rte 66, Williams, AZ 86046, United States",
+            "location": "From South Rim go to Bearzonia",
+            "notes": ""
+        },
+        {
+            "day": "Grand Canyon",
+            "time": "00:40:00",
+            "activity": "Fry's Fuel Center, 199 N Switzer Canyon Dr, Flagstaff, AZ 86001, United States",
+            "location": "Bearzonia to Fuel ",
+            "notes": ""
+        },
+        {
+            "day": "Grand Canyon",
+            "time": "00:04:00",
+            "activity": "Super 8 by Wyndham NAU/Downtown ",
+            "location": "Fuel to Hotel",
+            "notes": ""
+        },
+        {
+            "day": "Grand Canyon",
+            "time": "01:26:00",
+            "activity": "Costco Gas Station, 3911 AZ-69, Prescott, AZ 86301, United States",
+            "location": "Hotel to Costco",
+            "notes": ""
+        },
+        {
+            "day": "Grand Canyon",
+            "time": "05:00:00",
+            "activity": "Park Blvd, Joshua Tree, CA 92252, USA",
+            "location": "Drive to josua tree from Costco",
+            "notes": ""
+        },
+        {
+            "day": "Grand Canyon",
+            "time": "02:08:00",
+            "activity": "Costco Gas Station, 12350 Carmel Mountain Rd, San Diego, CA 92128, United States",
+            "location": "Joshua Tree to Costco",
+            "notes": ""
+        },
+        {
+            "day": "Grand Canyon",
+            "time": "00:24:00",
+            "activity": "San Diego Zoo, 2920 Zoo Dr, San Diego, CA 92101, United States",
+            "location": "Costco to San Diego Zoo",
+            "notes": ""
+        },
+        {
+            "day": "Grand Canyon",
+            "time": "01:45:00",
+            "activity": "Travelodge by Wyndham LAX, 1804 E Sycamore Ave, El Segundo, CA 90245, United States",
+            "location": "San Diego Zoo to LA Hotel",
+            "notes": ""
+        },
+        {
+            "day": "Grand Canyon",
+            "time": "",
+            "activity": "go for dinner and chill",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "LA prt 2",
+            "time": "01:26:00",
+            "activity": "Costco Gas Station, 3911 AZ-69, Prescott, AZ 86301, United States",
+            "location": "Hotel to Costco",
+            "notes": ""
+        },
+        {
+            "day": "LA prt 2",
+            "time": "05:00:00",
+            "activity": "Park Blvd, Joshua Tree, CA 92252, USA",
+            "location": "Drive to josua tree from Costco",
+            "notes": ""
+        },
+        {
+            "day": "LA prt 2",
+            "time": "02:08:00",
+            "activity": "Costco Gas Station, 12350 Carmel Mountain Rd, San Diego, CA 92128, United States",
+            "location": "Joshua Tree to Costco",
+            "notes": ""
+        },
+        {
+            "day": "LA prt 2",
+            "time": "00:24:00",
+            "activity": "San Diego Zoo, 2920 Zoo Dr, San Diego, CA 92101, United States",
+            "location": "Costco to San Diego Zoo",
+            "notes": ""
+        },
+        {
+            "day": "LA prt 2",
+            "time": "01:45:00",
+            "activity": "Travelodge by Wyndham LAX, 1804 E Sycamore Ave, El Segundo, CA 90245, United States",
+            "location": "San Diego Zoo to LA Hotel",
+            "notes": ""
+        },
+        {
+            "day": "LA prt 2",
+            "time": "",
+            "activity": "go for dinner and chill",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "LA prt 2",
+            "time": "",
+            "activity": "hike to runyan canyon park",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "LA prt 2",
+            "time": "",
+            "activity": "hollywood sign and shopping",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "LA prt 2",
+            "time": "",
+            "activity": "really nice rooptop bar and dinner in LA",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "LA prt 2",
+            "time": "",
+            "activity": "breakfast and any last minute shopping and browse and then pack for airport",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "LA prt 2",
+            "time": "",
+            "activity": "flight at 19:45 so get to airport for 4",
+            "location": "",
+            "notes": ""
+        }
+    ],
+    "Prague": [
+        {
+            "day": "Friday",
+            "time": "5:55PM",
+            "activity": "Hotel Duo",
+            "location": "Prague Terminal 1",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "8:30PM",
+            "activity": "Střížkov Station",
+            "location": "Hotel Duo",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "8:35PM",
+            "activity": "I.P. Pavlova Station",
+            "location": "Střížkov Station",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "8:55PM",
+            "activity": "PAPRIKA - Mediterranean Kitchen & Bar ",
+            "location": "I.P. Pavlova Station",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "10:00PM",
+            "activity": "Reset Bar",
+            "location": "PAPRIKA - Mediterranean Kitchen & Bar ",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "11:30PM",
+            "activity": "I.P. Pavlova Station",
+            "location": "Reset Bar",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "11:36PM",
+            "activity": "Střížkov Station",
+            "location": "I.P. Pavlova Station",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "10:30AM",
+            "activity": "Střížkov Station",
+            "location": "Hotel Duo",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "10:35AM",
+            "activity": "Muzeum Station",
+            "location": "Hotel Duo",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "10:50AM",
+            "activity": "Malostranská Station",
+            "location": "Muzeum Station",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "11:00AM",
+            "activity": "Prague Castle",
+            "location": "Malostranská Station",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "11:50PM",
+            "activity": "Malá Strana",
+            "location": "Prague Castle",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "12:30PM",
+            "activity": "Lennon Wall",
+            "location": "Malá Strana",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "12:50PM",
+            "activity": "Charles Bridge",
+            "location": "Lennon Wall",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "1:10PM",
+            "activity": "Old Town Square",
+            "location": "Charles Bridge",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "2:25PM",
+            "activity": "Lunch",
+            "location": "Old Town Square",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "3:15PM",
+            "activity": "Prague Astronomical Clock (Tour)",
+            "location": "Prague Astronomical Clock (Tour)",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "4:00PM",
+            "activity": "Socha zavěšeného Sigmunda Freuda (man hanging out)",
+            "location": "Prague Astronomical Clock",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "4:15PM",
+            "activity": "Franz Kafka - Otočná hlava (head)",
+            "location": "Socha zavěšeného Sigmunda Freuda (man hanging out)",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "4:45PM",
+            "activity": "Etnosvet Resturant",
+            "location": "Franz Kafka - Otočná hlava",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "6:00PM",
+            "activity": "Gin & Tonic Club",
+            "location": "Etnosvet Resturant",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "7:00PM",
+            "activity": "Muzeum Station",
+            "location": "Gin & Tonic Club",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "7:10PM",
+            "activity": "Střížkov Station",
+            "location": "Muzeum Station",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "7:30PM",
+            "activity": "Hotel Duo",
+            "location": "Střížkov Station",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "10:00PM",
+            "activity": "Střížkov Station",
+            "location": "Hotel Duo",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "10:05PM",
+            "activity": "Nádraží Holešovice station",
+            "location": "Střížkov Station",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "10:14PM",
+            "activity": "Dlouhá třída tram",
+            "location": "Nádraží Holešovice tram",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "10:25PM",
+            "activity": "The Banker's Bar (Closes 1AM)",
+            "location": "Dlouhá třída tram",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "11:10PM",
+            "activity": "Green Devil's Absinth Bar & Shop (Closes 1AM)",
+            "location": "The Banker's Bar (Closes 1AM)",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "12:30AM",
+            "activity": "The Alchemist Bar (Closes 3AM)",
+            "location": "Green Devil's Absinth Bar & Shop (Closes 1AM)",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "3:00AM",
+            "activity": "Hotel Duo",
+            "location": "The Alchemist Bar (Closes 3AM)",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "1:00PM",
+            "activity": "Střížkov Station",
+            "location": "Hotel Duo",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "1:05PM",
+            "activity": "I.P. Pavlova Station",
+            "location": "Střížkov Station",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "1:23PM",
+            "activity": "WAF-WAF",
+            "location": "I.P. Pavlova Station",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "2:15PM",
+            "activity": "Wenceslas Square ",
+            "location": "WAF-WAF",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "3:15PM",
+            "activity": "Old Town Square (ice skating there also)",
+            "location": "Wenceslas Square ",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "4:30PM",
+            "activity": "Prague Golf & Games",
+            "location": "Old Town Square",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "5:30PM",
+            "activity": "Glass Bar",
+            "location": "Prague Golf & Games",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "6:45PM",
+            "activity": "Karlovo náměstí station",
+            "location": "Glass Bar",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "6:56PM",
+            "activity": "Hummus Nofech",
+            "location": "Florenc Station",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "8:00PM",
+            "activity": "Cloud 9",
+            "location": "Hummus Nofech",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "9:30PM",
+            "activity": "Florenc Station",
+            "location": "Cloud 9",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "9:45PM",
+            "activity": "Střížkov Station",
+            "location": "Florenc Station",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "9:56PM",
+            "activity": "Hotel Duo",
+            "location": "Střížkov Station",
+            "notes": ""
+        }
+    ],
+    "Paris": [
+        {
+            "day": "Thursday",
+            "time": "1:00PM",
+            "activity": "Hôtel Mercure Paris Opéra Grands Boulevards, 42 Rue des Petites Écuries, 75010 Paris, France",
+            "location": "Paris Gare Du Nord ",
+            "notes": ""
+        },
+        {
+            "day": "Thursday",
+            "time": "2:30PM",
+            "activity": "Château d'Eau",
+            "location": "Hôtel Mercure Paris Opéra Grands Boulevards",
+            "notes": ""
+        },
+        {
+            "day": "Thursday",
+            "time": "2:36PM",
+            "activity": "Saint-Michel Notre-Dame",
+            "location": "Château d'Eau",
+            "notes": ""
+        },
+        {
+            "day": "Thursday",
+            "time": "2:45PM",
+            "activity": "Cathédrale Notre-Dame de Paris",
+            "location": "Saint-Michel Notre-Dame",
+            "notes": ""
+        },
+        {
+            "day": "Thursday",
+            "time": "3:30PM",
+            "activity": "Saint-Michel Notre-Dame Station",
+            "location": "Cathédrale Notre-Dame de Paris",
+            "notes": ""
+        },
+        {
+            "day": "Thursday",
+            "time": "3:40PM",
+            "activity": "Pont de L Alma Station",
+            "location": "Saint-Michel Notre-Dame Station",
+            "notes": ""
+        },
+        {
+            "day": "Thursday",
+            "time": "3:50PM",
+            "activity": "Champs-Élysées",
+            "location": "Pont de L Alma Station",
+            "notes": ""
+        },
+        {
+            "day": "Thursday",
+            "time": "4:30PM",
+            "activity": "Arc de Triomphe Tour",
+            "location": "Champs-Élysées",
+            "notes": ""
+        },
+        {
+            "day": "Thursday",
+            "time": "6:00PM",
+            "activity": "Charles de Gaulle – Étoile Station",
+            "location": "Arc de Triomphe Tour",
+            "notes": ""
+        },
+        {
+            "day": "Thursday",
+            "time": "6:10PM",
+            "activity": "Anvers Station",
+            "location": "Charles de Gaulle – Étoile Station",
+            "notes": ""
+        },
+        {
+            "day": "Thursday",
+            "time": "6:25PM",
+            "activity": "Hank Burger",
+            "location": "Anvers Station",
+            "notes": ""
+        },
+        {
+            "day": "Thursday",
+            "time": "7:30PM",
+            "activity": "Hôtel Mercure Paris Opéra Grands Boulevards, 42 Rue des Petites Écuries, 75010 Paris, France",
+            "location": "Hank Burger",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "10:20AM",
+            "activity": "Poissonnière Station",
+            "location": "Hôtel Mercure Paris Opéra Grands Boulevards",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "10:30AM",
+            "activity": "Palais Royal Musée du Louvre Station",
+            "location": "Poissonnière Station",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "10:40AM",
+            "activity": "Louvre Museum",
+            "location": "Palais Royal Musée du Louvre Station",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "11:00AM",
+            "activity": "Louvre Museum Tour",
+            "location": "Louvre Museum Tour",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "12:00PM",
+            "activity": "Sainte-Chapelle",
+            "location": "Louvre Museum Tour",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "12:15PM",
+            "activity": "Sainte-Chapelle Tour",
+            "location": "Sainte-Chapelle Tour",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "1:20PM",
+            "activity": "Saint-Michel Notre-Dame Station",
+            "location": "Sainte-Chapelle",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "1:25PM",
+            "activity": "Champ de Metro - Tour Eiffel Station",
+            "location": "Saint-Michel Notre-Dame Station",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "1:40PM",
+            "activity": "Find somewhere for lunch",
+            "location": "Champ de Metro - Tour Eiffel Station",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "2:30PM",
+            "activity": "Aquarium de Paris",
+            "location": "Find somewhere for lunch",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "3:00PM",
+            "activity": "Aquarium de Paris Tour",
+            "location": "Aquarium de Paris Tour",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "6:00PM",
+            "activity": "Varsovie",
+            "location": "Aquarium de Paris",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "6:02PM",
+            "activity": "Tour Eiffel",
+            "location": "Varsovie",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "6:30PM",
+            "activity": "Eiffel Tower tour",
+            "location": "Eiffel Tower tour",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "11:00AM",
+            "activity": "Bonne Nouvelle Station",
+            "location": "Hôtel Mercure Paris Opéra Grands Boulevards",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "11:10AM",
+            "activity": "Alma-Marceau Station",
+            "location": "Bonne Nouvelle Station",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "11:25AM",
+            "activity": "300 Port de la Bourdonnais 3, 75007 Paris, France",
+            "location": "Alma-Marceau Station",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "12:00PM",
+            "activity": "1-hour River Seine Cruise",
+            "location": "1-hour River Seine Cruise",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "1:00PM",
+            "activity": "Bir-Hakeim Station",
+            "location": "300 Port de la Bourdonnais 3, 75007 Paris, France",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "1:20PM",
+            "activity": "Gare Montparnasse Station",
+            "location": "Bir-Hakeim Station",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "1:35PM",
+            "activity": "Find lunch somewhere near",
+            "location": "Gare Montparnasse Station",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "3:00PM",
+            "activity": "Montparnasse Tower Tour",
+            "location": "Montparnasse Tower Tour",
+            "notes": ""
+        }
+    ],
+    "Milan": [
+        {
+            "day": "Friday",
+            "time": "21:56PM",
+            "activity": "Milano Cadorna",
+            "location": "Aéroport de Milan Malpensa T1",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "22:42PM",
+            "activity": "Via S.Sofia 13 Fronte Via S.Senatore",
+            "location": "Cadorna M1 m2",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "22:52AM",
+            "activity": "Uptown Palace, Via Santa Sofia, 10, 20122 Milano MI, Italy",
+            "location": "Via S.Sofia 13 Fronte Via S.Senatore",
+            "notes": ""
+        },
+        {
+            "day": "Friday",
+            "time": "11:30PM",
+            "activity": "L'Isola del Tesoro",
+            "location": "Uptown Palace, Via Santa Sofia, 10, 20122 Milano MI, Italy",
+            "notes": "OPEN UNTIL 1AM\nhttp://www.isoladeltesoro.net/it/menu/food/\n"
+        },
+        {
+            "day": "Friday",
+            "time": "1:00AM",
+            "activity": "Uptown Palace, Via Santa Sofia, 10, 20122 Milano MI, Italy",
+            "location": "L'Isola del Tesoro",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "10:00AM",
+            "activity": "(Breakfast) Piazza Cordusio 3 Palazzo delle Poste, 20123 Milan Italy",
+            "location": "Uptown Palace, Via Santa Sofia, 10, 20122 Milano MI, Italy",
+            "notes": "https://www.tripadvisor.com/Restaurant_Review-g187849-d15099218-Reviews-Starbucks_Reserve_Roastery-Milan_Lombardy.html"
+        },
+        {
+            "day": "Saturday",
+            "time": "11:10AM",
+            "activity": "Piazza del Duomo & Duomo Terraces",
+            "location": "Piazza Cordusio 3 Palazzo delle Poste, 20123 Milan Italy",
+            "notes": "Book Tickets\nhttps://www.getyourguide.com/-t153354/?partner_id=6N2B5KS&cmp=Milan1d&deeplink_id=1e6e32f4-64e2-5dc8-b978-a3b5fa8e1874"
+        },
+        {
+            "day": "Saturday",
+            "time": "12:30AM",
+            "activity": "Galleria Vittorio Emanuele II, P.za del Duomo, 20123 Milano MI, Italy",
+            "location": "Pizza del Duomo & Duomo Terraces",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "13:00PM",
+            "activity": "Sforzesco Castle, Piazza Castello, 20121 Milano MI, Italy",
+            "location": "Galleria Vittorio Emanuele II, P.za del Duomo, 20123 Milano MI, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "14:00PM",
+            "activity": "(Lunch) Piazza Gae Aulenti, 4 Porta Nuova, Milan Italy",
+            "location": "Sforzesco Castle, Piazza Castello, 20121 Milano MI, Italy",
+            "notes": "https://www.paninidurini.it/wp-content/uploads/2021/06/men%C3%B9-full_estate-2021.pdf"
+        },
+        {
+            "day": "Saturday",
+            "time": "15:15PM",
+            "activity": "Via Gaetano de Castillia, 11, 20124 Milano MI, Italy",
+            "location": " Piazza Gae Aulenti, 4 Porta Nuova, Milan Italy",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "16:00PM",
+            "activity": "Uptown Palace, Via Santa Sofia, 10, 20122 Milano MI, Italy",
+            "location": "Via Gaetano de Castillia, 11, 20124 Milano MI, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "08:25AM",
+            "activity": "Crocetta Station",
+            "location": "Uptown Palace, Via Santa Sofia, 10, 20122 Milano MI, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "08:41AM",
+            "activity": "Centrale FS",
+            "location": "Crocetta Station",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "08:52AM",
+            "activity": "Milano Centrale Railway Station",
+            "location": "Centrale FS",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "09:20AM",
+            "activity": "Varenna-Esino Station",
+            "location": "Milano Centrale Railway Station",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "10:25AM",
+            "activity": "Varenna Ferry (Via Imbarcadero Piazza Martiri Libertà, 23829 Varenna LC, Italy)",
+            "location": "Varenna-Esino Station",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "10:55AM",
+            "activity": "Bellagio Ferry",
+            "location": "Varenna Ferry",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "11:15AM",
+            "activity": "Basilica of St. Giacomo, Piazza della Chiesa, 27, 22021 Bellagio CO, Italy",
+            "location": "Bellagio Ferry (Via Lungo Lario Manzoni, 7, 22021 Bellagio CO, Italy)",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "12:00PM",
+            "activity": "Punta Spartivento, Via Eugenio Vitali, 22021 Bellagio CO, Italy",
+            "location": "Basilica of St. Giacomo, Piazza della Chiesa, 27, 22021 Bellagio CO, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "13:35PM",
+            "activity": "Varenna Ferry (Via Imbarcadero Piazza Martiri Libertà, 23829 Varenna LC, Italy)",
+            "location": "Bellagio Ferry (Via Lungo Lario Manzoni, 7, 22021 Bellagio CO, Italy)",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "13:53PM",
+            "activity": "Piazza San Giorgio",
+            "location": "Varenna Ferry (Via Imbarcadero Piazza Martiri Libertà, 23829 Varenna LC, Italy)",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "14:30PM",
+            "activity": "Villa Monastero",
+            "location": "Piazza San Giorgio",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "15:00PM",
+            "activity": "Varenna Caffè",
+            "location": "Villa Monastero",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "17:10PM",
+            "activity": "Varenna - stazione F.S., 23828 Perledo LC, Italy",
+            "location": "Varenna Caffè",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "17:35PM",
+            "activity": "Milano Centrale Railway Station",
+            "location": "Varenna - stazione F.S., 23828 Perledo LC, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "18:45PM",
+            "activity": "Crocetta Station",
+            "location": "Centrale FS",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "18:54PM",
+            "activity": "Uptown Palace, Via Santa Sofia, 10, 20122 Milano MI, Italy",
+            "location": "Crocetta Station",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "10:30AM",
+            "activity": "Střížkov Station",
+            "location": "Hotel Duo",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "10:35AM",
+            "activity": "Muzeum Station",
+            "location": "Hotel Duo",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "10:50AM",
+            "activity": "Malostranská Station",
+            "location": "Muzeum Station",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "11:00AM",
+            "activity": "Prague Castle",
+            "location": "Malostranská Station",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "11:50PM",
+            "activity": "Malá Strana",
+            "location": "Prague Castle",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "12:30PM",
+            "activity": "Lennon Wall",
+            "location": "Malá Strana",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "12:50PM",
+            "activity": "Charles Bridge",
+            "location": "Lennon Wall",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "1:10PM",
+            "activity": "Old Town Square",
+            "location": "Charles Bridge",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "2:25PM",
+            "activity": "Lunch",
+            "location": "Old Town Square",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "3:15PM",
+            "activity": "Prague Astronomical Clock (Tour)",
+            "location": "Prague Astronomical Clock (Tour)",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "4:00PM",
+            "activity": "Socha zavěšeného Sigmunda Freuda (man hanging out)",
+            "location": "Prague Astronomical Clock",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "4:15PM",
+            "activity": "Franz Kafka - Otočná hlava (head)",
+            "location": "Socha zavěšeného Sigmunda Freuda (man hanging out)",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "4:45PM",
+            "activity": "Etnosvet Resturant",
+            "location": "Franz Kafka - Otočná hlava",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "6:00PM",
+            "activity": "Gin & Tonic Club",
+            "location": "Etnosvet Resturant",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "7:00PM",
+            "activity": "Muzeum Station",
+            "location": "Gin & Tonic Club",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "7:10PM",
+            "activity": "Střížkov Station",
+            "location": "Muzeum Station",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "7:30PM",
+            "activity": "Hotel Duo",
+            "location": "Střížkov Station",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "10:00PM",
+            "activity": "Střížkov Station",
+            "location": "Hotel Duo",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "10:05PM",
+            "activity": "Nádraží Holešovice station",
+            "location": "Střížkov Station",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "10:14PM",
+            "activity": "Dlouhá třída tram",
+            "location": "Nádraží Holešovice tram",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "10:25PM",
+            "activity": "The Banker's Bar (Closes 1AM)",
+            "location": "Dlouhá třída tram",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "11:10PM",
+            "activity": "Green Devil's Absinth Bar & Shop (Closes 1AM)",
+            "location": "The Banker's Bar (Closes 1AM)",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "12:30AM",
+            "activity": "The Alchemist Bar (Closes 3AM)",
+            "location": "Green Devil's Absinth Bar & Shop (Closes 1AM)",
+            "notes": ""
+        },
+        {
+            "day": "Tuesday",
+            "time": "3:00AM",
+            "activity": "Hotel Duo",
+            "location": "The Alchemist Bar (Closes 3AM)",
+            "notes": ""
+        }
+    ],
+    "Venice": [
+        {
+            "day": "Friday",
+            "time": "00:35:00",
+            "activity": "Free shuttle bus ParkinGO. Call 0039 3276393993 - 3516940611 for the shuttle; meeting point Park B Arrivals (RentSmart24)",
+            "location": "Marco Polo (Venice)",
+            "notes": "Car Rental"
+        },
+        {
+            "day": "Friday",
+            "time": "02:00:00",
+            "activity": "Sesto Piano Apartment, Via Nazionale, 18, 50064 Figline e Incisa Valdarno FI, Italy",
+            "location": "Via Orlanda, 219, Venezia, Città Metropolitana di Venezia, Veneto, 30173, Italy",
+            "notes": "Airbnb"
+        },
+        {
+            "day": "Saturday",
+            "time": "02:00:00",
+            "activity": "Sesto Piano Apartment, Via Nazionale, 18, 50064 Figline e Incisa Valdarno FI, Italy",
+            "location": "Via Orlanda, 219, Venezia, Città Metropolitana di Venezia, Veneto, 30173, Italy",
+            "notes": "Airbnb"
+        },
+        {
+            "day": "Saturday",
+            "time": "13:00:00",
+            "activity": "Pisa, Province of Pisa, Italy",
+            "location": "Sesto Piano Apartment, Via Nazionale, 18, 50064 Figline e Incisa Valdarno FI, Italy",
+            "notes": "https://thepisatower.com/tower-of-pisa-parking/\n\nhttps://www.tripadvisor.co.uk/Restaurant_Review-g187899-d19493176-Reviews-Bistrot_dell_Opera-Pisa_Province_of_Pisa_Tuscany.html"
+        },
+        {
+            "day": "Saturday",
+            "time": "17:00:00",
+            "activity": "Tuscany, Italy",
+            "location": "Pisa, Province of Pisa, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Saturday",
+            "time": "18:00:00",
+            "activity": "Florence, Metropolitan City of Florence, Italy",
+            "location": "Tuscany, Italy",
+            "notes": "https://www.lungarnocollection.com/la-terrazza-rooftop-bar/\n\nhttps://www.hotelcavour.com/divina-terrazza-rooftop-bar/"
+        },
+        {
+            "day": "Saturday",
+            "time": "21:00:00",
+            "activity": "Sesto Piano Apartment, Via Nazionale, 18, 50064 Figline e Incisa Valdarno FI, Italy",
+            "location": "Florence, Metropolitan City of Florence, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "07:30:00",
+            "activity": "Verona, Province of Verona, Italy",
+            "location": "Sesto Piano Apartment, Via Nazionale, 18, 50064 Figline e Incisa Valdarno FI, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "14:00:00",
+            "activity": "Via Orlanda, 219, Venezia, Città Metropolitana di Venezia, Veneto, 30173, Italy",
+            "location": "Verona, Province of Verona, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "16:15:00",
+            "activity": "Orlanda 200",
+            "location": "Via Orlanda, 219, Venezia, Città Metropolitana di Venezia, Veneto, 30173, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "16:15:00",
+            "activity": "Orlanda 200",
+            "location": "Via Orlanda, 219, Venezia, Città Metropolitana di Venezia, Veneto, 30173, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "16:15:00",
+            "activity": "Cavalcavia Vempa",
+            "location": "Orlanda 200",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "16:35:00",
+            "activity": "Leonardo Royal Hotel Venice Mestre",
+            "location": "Cavalcavia Vempa",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "20:00:00",
+            "activity": "Cavalcavia Vempa",
+            "location": "Leonardo Royal Hotel Venice Mestre",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "20:03:00",
+            "activity": "Stazione MESTRE FS C4",
+            "location": "Cavalcavia Vempa",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "22:00:00",
+            "activity": "Rampa Cavalcavia \"Vempa\"",
+            "location": "Venice Mestre Hotel Plaza",
+            "notes": ""
+        },
+        {
+            "day": "Sunday",
+            "time": "22:08:00",
+            "activity": "Leonardo Royal Hotel Venice Mestre",
+            "location": "Rampa Cavalcavia \"Vempa\"",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "08:30:00",
+            "activity": "Venice Mestre",
+            "location": "Leonardo Royal Hotel Venice Mestre",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "08:40:00",
+            "activity": "Stazione di Venezia Santa Lucia",
+            "location": "Venice Mestre",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "09:00:00",
+            "activity": "45°26'05.3\"N 12°20'34.4\"E",
+            "location": "Stazione di Venezia Santa Lucia",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "11:45:00",
+            "activity": "Campiello Traghetto, 30124 Venezia VE, Italy",
+            "location": "Doge's Palace, P.za San Marco, 1, 30124 Venezia VE, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "13:00:00",
+            "activity": "I Tre Mercanti, Calle al Ponte de la Guerra, 5364, 30122 Venezia VE, Italy",
+            "location": "Campiello Traghetto, 30124 Venezia VE, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "13:20:00",
+            "activity": "Calle Varisco - the narrowest street in Venice, Calle Varisco, 5462, 30121 Venezia VE, Italy",
+            "location": "I Tre Mercanti, Calle al Ponte de la Guerra, 5364, 30122 Venezia VE, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "13:45:00",
+            "activity": "Riva del Carbon, 30100 Venezia VE, Italy",
+            "location": "Calle Varisco - the narrowest street in Venice, Calle Varisco, 5462, 30121 Venezia VE, Italy",
+            "notes": ""
+        },
+        {
+            "day": "Monday",
+            "time": "15:15:00",
+            "activity": "Suso, Sotoportego de la Bissa, 5453, 30124 Venezia VE, Italy",
+            "location": "Riva del Carbon, 30100 Venezia VE, Italy",
+            "notes": ""
+        }
+    ],
+    "Thailand Trip": [
+        {
+            "day": "Travel Insurance",
+            "time": "",
+            "activity": "2244.92",
+            "location": "",
+            "notes": ""
+        },
+        {
+            "day": "Flights",
+            "time": "",
+            "activity": "Singapore",
+            "location": "London",
+            "notes": ""
+        },
+        {
+            "day": "Flights",
+            "time": "",
+            "activity": "Bangkok",
+            "location": "Singapore",
+            "notes": ""
+        },
+        {
+            "day": "Flights",
+            "time": "",
+            "activity": "Chiang Mai",
+            "location": "Bangkok",
+            "notes": ""
+        },
+        {
+            "day": "Flights",
+            "time": "",
+            "activity": "Island",
+            "location": "Chiang Mai",
+            "notes": ""
+        },
+        {
+            "day": "Flights",
+            "time": "",
+            "activity": "Bangkok",
+            "location": "Island",
+            "notes": ""
+        },
+        {
+            "day": "Flights",
+            "time": "",
+            "activity": "London",
+            "location": "Bangkok",
+            "notes": ""
+        },
+        {
+            "day": "Singapore",
+            "time": "10:00:00",
+            "activity": "Merlion Park",
+            "location": "Amara Singapore",
+            "notes": "Start your Singaporean escapade with a visit to the iconic Merlion Park, where the mythical creature spouts water against the backdrop of Marina Bay."
+        },
+        {
+            "day": "Singapore",
+            "time": "11:00:00",
+            "activity": "Marina Bay Promenade",
+            "location": "",
+            "notes": "Snap some Insta-worthy photos before strolling along the picturesque Marina Bay Promenade"
+        },
+        {
+            "day": "Singapore",
+            "time": "12:00:00",
+            "activity": "Enjoy Chinatown",
+            "location": "",
+            "notes": "Next, delve into Singapore’s rich cultural tapestry in Chinatown. Lose yourself in the labyrinthine streets lined with colorful shophouses, bustling markets, and ornate temples."
+        },
+        {
+            "day": "Singapore",
+            "time": "14:30:00",
+            "activity": "Hawker Center Food Market",
+            "location": "",
+            "notes": "For lunch, indulge in a gastronomic adventure at a Hawker center. A hawker center is a food market with cuisines from all over the world. Sample local delights like Hainanese chicken rice, laksa, and char kway teow, all at wallet-friendly prices."
+        },
+        {
+            "day": "Singapore",
+            "time": "20:00:00",
+            "activity": "Vietnamese Dinner with a Twist",
+            "location": "",
+            "notes": "For dinner, head to Ăn Là Ghiền (ahn-la-gi-hn). This is an authentic Vietnamese restaurant dedicated to bringing Vietnamese delicacies to Singapore\nĂn Là Ghiền has a wide variety of authentic Vietnamese selections as well as ample choices of food items for BBQ and Hotpot. The food was really good here, I highly recommend it!"
+        },
+        {
+            "day": "Singapore",
+            "time": "10:00:00",
+            "activity": "Gardens by the Bay ",
+            "location": "",
+            "notes": "Gardens by the Bay is a futuristic botanical garden showcasing Singapore’s best green technology. This is a place that will take up most of your day – and it is WORTH IT. Even if you are in Singapore for a single day, it is still worth it!\n"
+        },
+        {
+            "day": "Singapore",
+            "time": "11:00:00",
+            "activity": "Avatar: The Experience",
+            "location": "",
+            "notes": "This is also within the same park so no need to waste time moving! I was incredibly lucky to catch the special showcase of Avatar the experience inside Gardens by the bay. I am a huge fan of the Avatar movies so I was in heaven!\n"
+        },
+        {
+            "day": "Bangkok",
+            "time": "",
+            "activity": "Chinatown ( Yaowarat )",
+            "location": "Hotel",
+            "notes": "Soooooo much to do here in Bangkok! Another absolute must.. YOU must visit Chinatown in Bangkok. It is around 200 years old and full of flavour :D. This is one of the best places to get a bite to eat in the city.. walk around a choose your fancy. You will not be dissapointed.\n"
+        },
+        {
+            "day": "Bangkok",
+            "time": "09:00:00",
+            "activity": "Visit Temples",
+            "location": "Hotel",
+            "notes": "Meet the group at River City Bangkok 9am\nAmulet Market\nEmerald Buddha (Highlight! Be extra respectful - the most sacred Buddhist temple in Thailand)\nExplore the Grand Palace (Knowledge is passed on throughout :D)\nThe Thien Market (A Cultural food market)\nWat Pho (The reclining Buddha) - lots of history here. Very important place to visit.\nWat Arun (The Giant tower next to the river! cool.)"
+        },
+        {
+            "day": "Bangkok",
+            "time": "15:00:00",
+            "activity": "MBK Center",
+            "location": "",
+            "notes": "Shopping in Bangkok is genuinely AWESOME! We absolutely loved all the different shopping centers. (Icon Siam, Siam discovery, Siam Paragon.. and plenty more all worth a visit 100%!). However our absolute favourite.. was a little seedier the MBK Center was the place for questionably legitamate items at very low prices. We spent hours going through this place, just browsing.. all sorts on offer! Hella fun! This place is a must visit when in Bangkok - even for the experience."
+        },
+        {
+            "day": "Bangkok",
+            "time": "07:00:00",
+            "activity": "Bangkok: Railway and Floating Market Tour with Dragon Temple",
+            "location": "Hotel",
+            "notes": "Air coditioned coach trip\nMaeklong Railway Market ( Panoramic train ride ) - watch people move market stalls as trais approach!\nPaddleboat ride\nDamnoen Saduak (Floating Market)\nAir conditioned coach trip back"
+        },
+        {
+            "day": "Bangkok",
+            "time": "",
+            "activity": "Bangkok: Muay Thai Boxing Tickets at Rajadamnern Stadium\n",
+            "location": "",
+            "notes": "We decided to book an evening at the Rajadamnern Stadium through GYG. These where ring side seats so we got to see all of the action. The Rajadamnern stadium is the first ever Muay Thai stadium in Thailand. It had a very special feel to it with lots and lots of atmosphere. The gambling locals definately helped with the atmosphere with there passion and confusing hand signals (very interesting way of taking and placing bets). With a total of 3 TKO across 9 fights these were high adrenaline - even for the audiance."
+        },
+        {
+            "day": "Chiang Mai ",
+            "time": "08:45:00",
+            "activity": "Chiang Mai: Elephant Sanctuary, Long Neck & Sticky Waterfall",
+            "location": "Hotel",
+            "notes": "Embark on a scenic journey to a private elephant sanctuary\nLearn the history of Asian elephants and how to prepare herbal treats for them\nBathe with the elephants in a refreshing river experience\nSavor an authentic Thai lunch with local dishes and fresh fruit\nExplore the unique Buatong Sticky Waterfall and climb its limestone-rich falls"
+        },
+        {
+            "day": "Chiang Mai ",
+            "time": "06:30:00",
+            "activity": "Chiang Rai Temples",
+            "location": "Hotel",
+            "notes": "Enjoy a relaxing stop at the Mae Kachan Hot Springs to rest and recharge\nDiscover the White Temple, a contemporary masterpiece of Buddhist architecture\nVisit the Blue Temple, a modern artistic style blending traditional Buddhist\nVisit a long-neck Mae Kachan village to experience their unique culture\nExplore the Hauyplakang Temple, famous for its impressive nine-tiered pagoda"
+        },
+        {
+            "day": "Koh Lipe  Koh Yao",
+            "time": "10:00:00",
+            "activity": "Merlion Park",
+            "location": "Hotel",
+            "notes": "Start your Singaporean escapade with a visit to the iconic Merlion Park, where the mythical creature spouts water against the backdrop of Marina Bay."
+        }
+    ]
+}
