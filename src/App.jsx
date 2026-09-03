@@ -12,10 +12,21 @@ const customPinIcon = L.divIcon({
   popupAnchor: [0, -32]
 });
 
+// Bulletproof Local Storage Parser to prevent "null" string crashes
+const safeParse = (key, fallback) => {
+  try {
+    const item = localStorage.getItem(key);
+    if (!item || item === 'null' || item === 'undefined') return fallback;
+    return JSON.parse(item) || fallback;
+  } catch (e) {
+    return fallback;
+  }
+};
+
 export default function App() {
   const [itineraries, setItineraries] = useState({});
   const [selectedTrip, setSelectedTrip] = useState('');
-  const [activeTab, setActiveTab] = useState('itinerary');
+  const [activeTab, setActiveTab] = useState('itinerary'); 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedNotes, setExpandedNotes] = useState({});
@@ -34,24 +45,23 @@ export default function App() {
   const [groupMembers, setGroupMembers] = useState(['You', 'Partner']);
   const [newMemberName, setNewMemberName] = useState('');
 
-  // Packing list & Journal states
-  const [packingItems, setPackingItems] = useState(JSON.parse(localStorage.getItem('travelPackingItems') || '[]'));
+  // Fortified State Initializers
+  const [packingItems, setPackingItems] = useState(safeParse('travelPackingItems', []));
   const [newPackingText, setNewPackingText] = useState('');
   const [newPackingAssignee, setNewPackingAssignee] = useState('You');
-  const [journalEntries, setJournalEntries] = useState(JSON.parse(localStorage.getItem('travelJournalEntries') || '[]'));
+  
+  const [journalEntries, setJournalEntries] = useState(safeParse('travelJournalEntries', []));
   const [newJournal, setNewJournal] = useState({ title: '', photoUrl: '', date: '', text: '' });
   const [isJournalModalOpen, setIsJournalModalOpen] = useState(false);
 
-  // Vault states
   const [vaultUnlocked, setVaultUnlocked] = useState(false);
   const [vaultPinInput, setVaultPinInput] = useState('');
   const [userPin, setUserPin] = useState(localStorage.getItem('travelVaultPin') || '');
-  const [vaultDocs, setVaultDocs] = useState(JSON.parse(localStorage.getItem('travelVaultDocs') || '[]'));
+  const [vaultDocs, setVaultDocs] = useState(safeParse('travelVaultDocs', []));
   const [newDoc, setNewDoc] = useState({ title: '', refNumber: '', notes: '' });
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
 
-  // Geocoding Cache for Leaflet Map
-  const [geoCache, setGeoCache] = useState(JSON.parse(localStorage.getItem('travelGeoCache') || '{}'));
+  const [geoCache, setGeoCache] = useState(safeParse('travelGeoCache', {}));
   const [draggingItem, setDraggingItem] = useState(null);
 
   useEffect(() => {
@@ -61,80 +71,90 @@ export default function App() {
     if (sharedTripData) {
       try {
         const decoded = JSON.parse(decodeURIComponent(atob(sharedTripData)));
-        setItineraries(decoded);
-        const firstKey = Object.keys(decoded)[0];
-        if (firstKey) setSelectedTrip(firstKey);
-        return;
+        if (decoded) {
+          setItineraries(decoded);
+          const firstKey = Object.keys(decoded)[0];
+          if (firstKey) setSelectedTrip(firstKey);
+          return;
+        }
       } catch (err) {
         console.error("Failed to parse shared trip data", err);
       }
     }
 
     const savedData = localStorage.getItem('myTravelData');
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      setItineraries(parsed);
-      if (Object.keys(parsed).length > 0) setSelectedTrip(Object.keys(parsed)[0]);
+    if (savedData && savedData !== 'null' && savedData !== 'undefined') {
+      try {
+        const parsed = JSON.parse(savedData);
+        setItineraries(parsed || {});
+        if (parsed && Object.keys(parsed).length > 0) {
+          setSelectedTrip(Object.keys(parsed)[0]);
+        }
+      } catch(e) {
+        console.error("Failed to parse local itinerary data", e);
+      }
     } else {
       fetch('/master_itinerary.json')
         .then((res) => res.json())
         .then((data) => {
-          setItineraries(data);
-          localStorage.setItem('myTravelData', JSON.stringify(data));
-          if (Object.keys(data).length > 0) setSelectedTrip(Object.keys(data)[0]);
-        });
+          if (data) {
+            setItineraries(data);
+            localStorage.setItem('myTravelData', JSON.stringify(data));
+            if (Object.keys(data).length > 0) setSelectedTrip(Object.keys(data)[0]);
+          }
+        }).catch(err => console.error("Failed to fetch master JSON", err));
     }
   }, []);
 
   useEffect(() => {
-    if (Object.keys(itineraries).length > 0) {
+    if (itineraries && Object.keys(itineraries).length > 0) {
       localStorage.setItem('myTravelData', JSON.stringify(itineraries));
     }
   }, [itineraries]);
 
   useEffect(() => {
-    localStorage.setItem('travelVaultDocs', JSON.stringify(vaultDocs));
-    localStorage.setItem('travelPackingItems', JSON.stringify(packingItems));
-    localStorage.setItem('travelJournalEntries', JSON.stringify(journalEntries));
-    localStorage.setItem('travelGeoCache', JSON.stringify(geoCache));
+    localStorage.setItem('travelVaultDocs', JSON.stringify(vaultDocs || []));
+    localStorage.setItem('travelPackingItems', JSON.stringify(packingItems || []));
+    localStorage.setItem('travelJournalEntries', JSON.stringify(journalEntries || []));
+    localStorage.setItem('travelGeoCache', JSON.stringify(geoCache || {}));
   }, [vaultDocs, packingItems, journalEntries, geoCache]);
 
-  if (!selectedTrip && Object.keys(itineraries).length === 0) {
+  if (!selectedTrip && (!itineraries || Object.keys(itineraries).length === 0)) {
     return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
   }
 
-  let currentTripData = itineraries[selectedTrip] || [];
+  let currentTripData = itineraries?.[selectedTrip] || [];
 
   if (searchQuery.trim() !== '') {
     const lowerQuery = searchQuery.toLowerCase();
     currentTripData = currentTripData.filter(item => 
-      (item.activity && item.activity.toLowerCase().includes(lowerQuery)) ||
-      (item.location && item.location.toLowerCase().includes(lowerQuery)) ||
-      (item.notes && item.notes.toLowerCase().includes(lowerQuery)) ||
-      (item.day && item.day.toLowerCase().includes(lowerQuery))
+      ((item?.activity || '').toLowerCase().includes(lowerQuery)) ||
+      ((item?.location || '').toLowerCase().includes(lowerQuery)) ||
+      ((item?.notes || '').toLowerCase().includes(lowerQuery)) ||
+      ((item?.day || '').toLowerCase().includes(lowerQuery))
     );
   }
 
-  const todoData = currentTripData.filter(item => item.day.toLowerCase().includes('to do'));
-  let itineraryData = currentTripData.filter(item => !item.day.toLowerCase().includes('to do'));
+  const todoData = currentTripData.filter(item => (item?.day || '').toLowerCase().includes('to do'));
+  let itineraryData = currentTripData.filter(item => !(item?.day || '').toLowerCase().includes('to do'));
 
   const getCategory = (text) => {
-    const t = text.toLowerCase();
+    const t = (text || '').toLowerCase();
     if (t.includes('hotel') || t.includes('motel') || t.includes('airbnb') || t.includes('stay')) return 'Hotel';
     if (t.includes('flight') || t.includes('airport') || t.includes('terminal')) return 'Transport';
-    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('food') || t.includes('eat') || t.includes('restaurant') || t.includes('walmart') || t.includes('grocery') || t.includes('cafe')) return 'Food';
+    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('food') || t.includes('eat') || t.includes('restaurant') || t.includes('walmart') || t.includes('grocery') || t.includes('cafe') || t.includes('coffee')) return 'Food';
     if (t.includes('drive') || t.includes('car') || t.includes('uber') || t.includes('road') || t.includes('train') || t.includes('station') || t.includes('bus') || t.includes('gas')) return 'Transport';
-    if (t.includes('hike') || t.includes('park') || t.includes('canyon') || t.includes('tour') || t.includes('zoo') || t.includes('museum') || t.includes('temple')) return 'Activity';
+    if (t.includes('hike') || t.includes('park') || t.includes('canyon') || t.includes('tour') || t.includes('zoo') || t.includes('museum') || t.includes('temple') || t.includes('shrine')) return 'Activity';
     if (t.includes('bar') || t.includes('club') || t.includes('drink')) return 'Nightlife';
     return 'Other';
   };
 
   if (selectedCategory !== 'All') {
-    itineraryData = itineraryData.filter(item => getCategory(item.activity) === selectedCategory);
+    itineraryData = itineraryData.filter(item => getCategory(item?.activity) === selectedCategory);
   }
 
   const groupedItinerary = itineraryData.reduce((groups, item) => {
-    const day = item.day || 'Unscheduled';
+    const day = item?.day || 'Unscheduled';
     if (!groups[day]) groups[day] = [];
     groups[day].push(item);
     return groups;
@@ -151,25 +171,25 @@ export default function App() {
   };
 
   const findHotelAddress = () => {
-    const hotelItem = currentTripData.find(item => getCategory(item.activity) === 'Hotel' || item.activity.toLowerCase().includes('hotel') || item.activity.toLowerCase().includes('motel'));
+    const hotelItem = currentTripData.find(item => getCategory(item?.activity) === 'Hotel' || (item?.activity || '').toLowerCase().includes('hotel') || (item?.activity || '').toLowerCase().includes('motel'));
     if (hotelItem) {
       if (hotelItem.location && hotelItem.location.trim() !== '') return hotelItem.location;
-      return hotelItem.activity;
+      return hotelItem.activity || '';
     }
-    return `${selectedTrip.replace(/_/g, ' ')} hotel`;
+    return `${(selectedTrip || '').replace(/_/g, ' ')} hotel`;
   };
 
   const getMapLinkData = (item) => {
-    const rawLoc = item.location && item.location.trim() !== '' && !item.location.toLowerCase().includes('drive') 
+    const rawLoc = (item?.location && item.location.trim() !== '' && !(item.location || '').toLowerCase().includes('drive')) 
       ? item.location 
-      : item.activity;
+      : item?.activity;
     
     if (!rawLoc) return null;
     const lower = rawLoc.toLowerCase();
     const ignoreList = ['do', 'lunch and a walk', 'prep for clothes', 'chill at hotel', 'then go for dinner and relax'];
     if (ignoreList.includes(lower)) return null;
 
-    const tripCity = selectedTrip.replace(/_/g, ' ');
+    const tripCity = (selectedTrip || '').replace(/_/g, ' ');
     const hotelAddress = findHotelAddress();
 
     if (rawLoc.toLowerCase().includes(' to ')) {
@@ -214,9 +234,7 @@ export default function App() {
   useEffect(() => {
     if (activeTab !== 'map') return;
     
-    // Find items not yet in the cache
-    const locationsToFetch = [...new Set(mapItems.map(m => m.query))].filter(q => geoCache[q] === undefined);
-    
+    const locationsToFetch = [...new Set(mapItems.map(m => m?.query))].filter(q => q && geoCache[q] === undefined);
     if (locationsToFetch.length === 0) return;
 
     let isMounted = true;
@@ -226,7 +244,6 @@ export default function App() {
       for (const loc of locationsToFetch) {
         if (!isMounted) break;
         try {
-          // Use OpenStreetMap Nominatim for free public geocoding
           const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(loc)}&limit=1`);
           const data = await res.json();
           if (data && data.length > 0) {
@@ -235,7 +252,6 @@ export default function App() {
             currentCache[loc] = 'NOT_FOUND';
           }
           setGeoCache({ ...currentCache });
-          // Sleep for 1 second between requests to respect Nominatim free limits
           await new Promise(r => setTimeout(r, 1100)); 
         } catch(e) {
           console.error("Geocoding failed for:", loc, e);
@@ -246,18 +262,18 @@ export default function App() {
     fetchCoordinates();
     return () => { isMounted = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, JSON.stringify(mapItems.map(m => m.query))]);
+  }, [activeTab, JSON.stringify(mapItems.map(m => m?.query))]);
 
   const resolvedMarkers = mapItems.map(item => ({
     ...item,
-    coords: geoCache[item.query] !== 'NOT_FOUND' ? geoCache[item.query] : null
-  })).filter(m => m.coords);
+    coords: geoCache[item?.query] !== 'NOT_FOUND' ? geoCache[item?.query] : null
+  })).filter(m => m && m.coords && Array.isArray(m.coords));
 
   const getRouteLegEstimate = (index, arr) => {
     if (index === 0) return null;
     const prev = arr[index - 1];
     const curr = arr[index];
-    const hash = (prev.activity + curr.activity).length;
+    const hash = ((prev?.activity || '') + (curr?.activity || '')).length;
     const mins = (hash % 35) + 12; 
     const miles = (mins * 0.8).toFixed(1);
     return `🚗 ${mins} min drive (${miles} mi)`;
@@ -326,7 +342,7 @@ export default function App() {
     e.preventDefault();
     if (!draggingItem) return;
 
-    const tripData = [...itineraries[selectedTrip]];
+    const tripData = [...(itineraries[selectedTrip] || [])];
     const sourceItemIndex = tripData.findIndex(i => i === draggingItem.item);
     
     if (sourceItemIndex > -1) {
@@ -353,12 +369,12 @@ export default function App() {
   groupMembers.forEach(m => memberPaidTotals[m] = 0);
 
   (itineraries[selectedTrip] || []).forEach(item => {
-    const val = parseFloat(item.cost || 0);
+    const val = parseFloat(item?.cost || 0);
     if (!isNaN(val) && val > 0) {
       totalBudget += val;
-      const cat = getCategory(item.activity);
+      const cat = getCategory(item?.activity);
       categoryTotals[cat] = (categoryTotals[cat] || 0) + val;
-      const payer = item.paidBy || 'You';
+      const payer = item?.paidBy || 'You';
       memberPaidTotals[payer] = (memberPaidTotals[payer] || 0) + val;
     }
   });
@@ -371,13 +387,13 @@ export default function App() {
     
     data.forEach(item => {
       const row = [
-        `"${(item.day || '').replace(/"/g, '""')}"`,
-        `"${(item.time || '').replace(/"/g, '""')}"`,
-        `"${(item.activity || '').replace(/"/g, '""')}"`,
-        `"${(item.location || '').replace(/"/g, '""')}"`,
-        `"${(item.cost || '').replace(/"/g, '""')}"`,
-        `"${(item.paidBy || 'You').replace(/"/g, '""')}"`,
-        `"${(item.notes || '').replace(/"/g, '""')}"`
+        `"${(item?.day || '').replace(/"/g, '""')}"`,
+        `"${(item?.time || '').replace(/"/g, '""')}"`,
+        `"${(item?.activity || '').replace(/"/g, '""')}"`,
+        `"${(item?.location || '').replace(/"/g, '""')}"`,
+        `"${(item?.cost || '').replace(/"/g, '""')}"`,
+        `"${(item?.paidBy || 'You').replace(/"/g, '""')}"`,
+        `"${(item?.notes || '').replace(/"/g, '""')}"`
       ];
       csvContent += row.join(",") + "\n";
     });
@@ -410,12 +426,12 @@ export default function App() {
       <div className="relative h-64 md:h-80 w-full bg-slate-900 overflow-hidden print:hidden">
         <img 
           src={
-            selectedTrip.toLowerCase().includes('usa') ? "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80" :
-            selectedTrip.toLowerCase().includes('prague') ? "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=80" :
-            selectedTrip.toLowerCase().includes('paris') ? "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1600&q=80" :
-            selectedTrip.toLowerCase().includes('milan') ? "https://images.unsplash.com/photo-1520485647539-516b3226a254?auto=format&fit=crop&w=1600&q=80" :
-            selectedTrip.toLowerCase().includes('venice') ? "https://images.unsplash.com/photo-1514896856981-09c366f7cae2?auto=format&fit=crop&w=1600&q=80" :
-            selectedTrip.toLowerCase().includes('thailand') ? "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('usa') ? "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('prague') ? "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('paris') ? "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('milan') ? "https://images.unsplash.com/photo-1520485647539-516b3226a254?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('venice') ? "https://images.unsplash.com/photo-1514896856981-09c366f7cae2?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('thailand') ? "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=1600&q=80" :
             "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1600&q=80"
           } 
           alt="Destination Cover"
@@ -426,7 +442,7 @@ export default function App() {
         <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-end gap-4">
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-md mb-2 capitalize">
-              {selectedTrip.replace(/_/g, ' ')}
+              {(selectedTrip || '').replace(/_/g, ' ')}
             </h1>
             <p className="text-gray-200 font-medium tracking-wide flex items-center gap-3 flex-wrap">
               <span>🌍 {itineraryData.length} Activities</span>
@@ -452,7 +468,7 @@ export default function App() {
               setSelectedCategory('All');
             }}
           >
-            {Object.keys(itineraries).map(trip => (
+            {Object.keys(itineraries || {}).map(trip => (
               <option key={trip} value={trip} className="text-gray-900">
                 {trip.replace(/_/g, ' ')}
               </option>
@@ -500,54 +516,14 @@ export default function App() {
 
         {/* Navigation Tabs */}
         <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1 mb-8 overflow-x-auto print:hidden">
-          <button 
-            onClick={() => setActiveTab('itinerary')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            🗺️ Itinerary
-          </button>
-          <button 
-            onClick={() => setActiveTab('ai-generator')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'ai-generator' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-600 hover:bg-purple-50'}`}
-          >
-            ✨ AI Generator
-          </button>
-          <button 
-            onClick={() => setActiveTab('map')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'map' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            📍 Map
-          </button>
-          <button 
-            onClick={() => setActiveTab('budget')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            💰 Budget
-          </button>
-          <button 
-            onClick={() => setActiveTab('split')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'split' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            ⚖️ Split
-          </button>
-          <button 
-            onClick={() => setActiveTab('packing')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'packing' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            🎒 Packing
-          </button>
-          <button 
-            onClick={() => setActiveTab('journal')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'journal' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            📸 Journal
-          </button>
-          <button 
-            onClick={() => setActiveTab('vault')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'vault' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            🔒 Vault
-          </button>
+          <button onClick={() => setActiveTab('itinerary')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🗺️ Itinerary</button>
+          <button onClick={() => setActiveTab('ai-generator')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'ai-generator' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-600 hover:bg-purple-50'}`}>✨ AI Generator</button>
+          <button onClick={() => setActiveTab('map')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'map' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📍 Map</button>
+          <button onClick={() => setActiveTab('budget')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>💰 Budget</button>
+          <button onClick={() => setActiveTab('split')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'split' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>⚖️ Split</button>
+          <button onClick={() => setActiveTab('packing')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'packing' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🎒 Packing</button>
+          <button onClick={() => setActiveTab('journal')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'journal' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📸 Journal</button>
+          <button onClick={() => setActiveTab('vault')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'vault' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🔒 Vault</button>
         </div>
 
         {/* TAB 1: ITINERARY TIMELINE */}
@@ -571,7 +547,7 @@ export default function App() {
                 <div className="relative border-l-2 border-gray-200 ml-4 md:ml-5 space-y-6 pl-8 md:pl-10">
                   {groupedItinerary[day].map((item, index) => {
                     const uniqueKey = `${day}-${index}`;
-                    const isLongNote = item.notes && item.notes.length > 100;
+                    const isLongNote = item?.notes && item.notes.length > 100;
                     const isExpanded = expandedNotes[uniqueKey];
                     const mapData = getMapLinkData(item);
                     const routeLeg = getRouteLegEstimate(index, groupedItinerary[day]);
@@ -589,18 +565,18 @@ export default function App() {
                           className="relative group cursor-grab active:cursor-grabbing"
                         >
                           <div className="absolute -left-[45px] md:-left-[54px] top-1 w-10 h-10 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center text-xl shadow-sm z-10 group-hover:border-blue-500 group-hover:scale-110 transition-transform duration-200">
-                            {getIcon(item.activity)}
+                            {getIcon(item?.activity)}
                           </div>
                           <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 group-hover:shadow-md transition-shadow duration-200">
                             <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
-                              <h4 className="text-lg font-bold text-gray-900 leading-tight pr-4">{item.activity}</h4>
+                              <h4 className="text-lg font-bold text-gray-900 leading-tight pr-4">{item?.activity}</h4>
                               <div className="flex items-center gap-2 flex-wrap">
-                                {item.cost && <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">${item.cost} (Paid by {item.paidBy || 'You'})</span>}
-                                {item.time && <span className="shrink-0 bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">{item.time}</span>}
+                                {item?.cost && <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">${item.cost} (Paid by {item.paidBy || 'You'})</span>}
+                                {item?.time && <span className="shrink-0 bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">{item.time}</span>}
                               </div>
                             </div>
                             
-                            {item.photo && (
+                            {item?.photo && (
                               <div className="mb-3 overflow-hidden rounded-xl h-48 border border-gray-200">
                                 <img src={item.photo} alt={item.activity} className="w-full h-full object-cover" />
                               </div>
@@ -617,7 +593,7 @@ export default function App() {
                               </a>
                             )}
                             
-                            {item.notes && (
+                            {item?.notes && (
                               <div className="mt-3 text-sm text-gray-600 bg-white p-3 rounded-xl border border-gray-100 leading-relaxed">
                                 <p className={!isExpanded && isLongNote ? "line-clamp-2 italic" : "italic"}>
                                   {item.notes}
@@ -713,7 +689,6 @@ export default function App() {
                     </Marker>
                   ))}
                   
-                  {/* Draw route lines between consecutive stops */}
                   {resolvedMarkers.length > 1 && (
                     <Polyline 
                       positions={resolvedMarkers.map(m => m.coords)} 
@@ -737,7 +712,7 @@ export default function App() {
         {activeTab === 'budget' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
             <h3 className="text-2xl font-black text-gray-900 mb-2">Trip Expense Dashboard</h3>
-            <p className="text-gray-500 mb-8 text-sm">Track and analyze expenses across categories for {selectedTrip.replace(/_/g, ' ')}.</p>
+            <p className="text-gray-500 mb-8 text-sm">Track and analyze expenses across categories for {(selectedTrip || '').replace(/_/g, ' ')}.</p>
 
             <div className="bg-slate-900 text-white rounded-2xl p-6 mb-8 flex justify-between items-center shadow-md">
               <div>
@@ -1077,6 +1052,24 @@ export default function App() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB 8: TO-DO LIST */}
+        {activeTab === 'todo' && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+            <h3 className="text-2xl font-black text-gray-900 mb-6">Pre-Trip Checklist</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {todoData.map((item, index) => (
+                <label key={index} className="flex items-start gap-4 p-4 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                  <input type="checkbox" className="w-5 h-5 mt-0.5 rounded text-blue-600" />
+                  <div>
+                    <span className="font-bold text-gray-900 block">{item?.activity}</span>
+                    {item?.location && <span className="text-sm text-blue-600 font-medium block mt-1">{item.location}</span>}
+                  </div>
+                </label>
+              ))}
+            </div>
           </div>
         )}
       </main>
