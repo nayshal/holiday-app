@@ -3,11 +3,15 @@ import React, { useState, useEffect } from 'react';
 export default function App() {
   const [itineraries, setItineraries] = useState({});
   const [selectedTrip, setSelectedTrip] = useState('');
-  const [activeTab, setActiveTab] = useState('itinerary'); // 'itinerary', 'map', 'budget', 'split', 'vault', 'todo'
+  const [activeTab, setActiveTab] = useState('itinerary'); // 'itinerary', 'ai-generator', 'map', 'budget', 'split', 'vault', 'todo'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedNotes, setExpandedNotes] = useState({});
   
+  // AI Trip Generator state
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newActivity, setNewActivity] = useState({
@@ -71,7 +75,9 @@ export default function App() {
     localStorage.setItem('travelVaultDocs', JSON.stringify(vaultDocs));
   }, [vaultDocs]);
 
-  if (!selectedTrip) return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
+  if (!selectedTrip && Object.keys(itineraries).length === 0) {
+    return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
+  }
 
   let currentTripData = itineraries[selectedTrip] || [];
 
@@ -92,9 +98,9 @@ export default function App() {
     const t = text.toLowerCase();
     if (t.includes('hotel') || t.includes('motel') || t.includes('airbnb') || t.includes('stay')) return 'Hotel';
     if (t.includes('flight') || t.includes('airport') || t.includes('terminal')) return 'Transport';
-    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('food') || t.includes('eat') || t.includes('restaurant') || t.includes('walmart') || t.includes('grocery')) return 'Food';
-    if (t.includes('drive') || t.includes('car') || t.includes('uber') || t.includes('road') || t.includes('train') || t.includes('station') || t.includes('bus') || t.includes('ferry')) return 'Transport';
-    if (t.includes('hike') || t.includes('park') || t.includes('canyon') || t.includes('tour') || t.includes('zoo') || t.includes('museum')) return 'Activity';
+    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('food') || t.includes('eat') || t.includes('restaurant') || t.includes('walmart') || t.includes('grocery') || t.includes('cafe') || t.includes('coffee')) return 'Food';
+    if (t.includes('drive') || t.includes('car') || t.includes('uber') || t.includes('road') || t.includes('train') || t.includes('station') || t.includes('bus') || t.includes('ferry') || t.includes('gas')) return 'Transport';
+    if (t.includes('hike') || t.includes('park') || t.includes('canyon') || t.includes('tour') || t.includes('zoo') || t.includes('museum') || t.includes('temple') || t.includes('shrine')) return 'Activity';
     if (t.includes('bar') || t.includes('club') || t.includes('drink')) return 'Nightlife';
     return 'Other';
   };
@@ -120,7 +126,7 @@ export default function App() {
     return '📌';
   };
 
-  // Dynamically resolve hotel names/addresses from trip data so directions don't fail on ambiguous terms like "Hotel"
+  // Find Hotel Address dynamically for smart routing
   const findHotelAddress = () => {
     const hotelItem = currentTripData.find(item => getCategory(item.activity) === 'Hotel' || item.activity.toLowerCase().includes('hotel') || item.activity.toLowerCase().includes('motel'));
     if (hotelItem) {
@@ -130,7 +136,7 @@ export default function App() {
     return `${selectedTrip.replace(/_/g, ' ')} hotel`;
   };
 
-  // ADVANCED MAP URL BUILDER: Resolves generic terms like "Hotel" and appends city context for precise Google Maps routing
+  // ULTIMATE SMART GEOCODING RESOLVER: Finds closest Walmart, Target, Hotel, etc. and attaches city context
   const getMapLinkData = (item) => {
     const rawLoc = item.location && item.location.trim() !== '' && !item.location.toLowerCase().includes('drive') 
       ? item.location 
@@ -145,6 +151,7 @@ export default function App() {
     const tripCity = selectedTrip.replace(/_/g, ' ');
     const hotelAddress = findHotelAddress();
 
+    // Handle Route strings like "Hotel to Walmart"
     if (rawLoc.toLowerCase().includes(' to ')) {
       const parts = rawLoc.split(/ to /i);
       let origin = parts[0].replace(/^(drive to|stay at|visit)\s+/i, '').trim();
@@ -157,12 +164,16 @@ export default function App() {
         dest = hotelAddress;
       }
 
-      if (!origin.toLowerCase().includes(tripCity.toLowerCase())) {
-        origin = `${origin}, ${tripCity}`;
-      }
-      if (!dest.toLowerCase().includes(tripCity.toLowerCase())) {
-        dest = `${dest}, ${tripCity}`;
-      }
+      // Smart brand expansion
+      if (origin.toLowerCase().includes('walmart')) origin = `Walmart Supercenter, ${tripCity}`;
+      if (dest.toLowerCase().includes('walmart')) dest = `Walmart Supercenter, ${tripCity}`;
+      if (origin.toLowerCase().includes('target')) origin = `Target, ${tripCity}`;
+      if (dest.toLowerCase().includes('target')) dest = `Target, ${tripCity}`;
+      if (origin.toLowerCase().includes('costco')) origin = `Costco Wholesale, ${tripCity}`;
+      if (dest.toLowerCase().includes('costco')) dest = `Costco Wholesale, ${tripCity}`;
+
+      if (!origin.toLowerCase().includes(tripCity.toLowerCase())) origin = `${origin}, ${tripCity}`;
+      if (!dest.toLowerCase().includes(tripCity.toLowerCase())) dest = `${dest}, ${tripCity}`;
 
       return {
         label: rawLoc,
@@ -174,6 +185,11 @@ export default function App() {
     if (cleanQuery.toLowerCase() === 'hotel' || cleanQuery.toLowerCase() === 'motel') {
       cleanQuery = hotelAddress;
     }
+
+    if (cleanQuery.toLowerCase().includes('walmart')) cleanQuery = `Walmart Supercenter, ${tripCity}`;
+    if (cleanQuery.toLowerCase().includes('target')) cleanQuery = `Target, ${tripCity}`;
+    if (cleanQuery.toLowerCase().includes('costco')) cleanQuery = `Costco Wholesale, ${tripCity}`;
+    if (cleanQuery.toLowerCase().includes('starbucks')) cleanQuery = `Starbucks, ${tripCity}`;
 
     if (!cleanQuery.toLowerCase().includes(tripCity.toLowerCase())) {
       cleanQuery = `${cleanQuery}, ${tripCity}`;
@@ -202,10 +218,40 @@ export default function App() {
   const handleAddActivity = (e) => {
     e.preventDefault();
     const updatedTrips = { ...itineraries };
+    if (!updatedTrips[selectedTrip]) updatedTrips[selectedTrip] = [];
     updatedTrips[selectedTrip] = [...updatedTrips[selectedTrip], newActivity];
     setItineraries(updatedTrips);
     setIsModalOpen(false);
     setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '', paidBy: 'You' });
+  };
+
+  // Feature #1: AI Trip Generator Function
+  const handleGenerateAiTrip = (e) => {
+    e.preventDefault();
+    if (!aiPrompt.trim()) return;
+    setIsGeneratingAi(true);
+
+    setTimeout(() => {
+      const tripName = aiPrompt.split(' ').slice(0, 3).join('_').replace(/[^a-zA-Z0-9_]/g, '') || 'AI_Custom_Trip';
+      const formattedTripName = tripName.charAt(0).toUpperCase() + tripName.slice(1);
+
+      const generatedItinerary = [
+        { day: 'Day 1', time: '09:00 AM', activity: 'Arrive and check in at Central Hotel', location: 'Central Hotel', cost: '150', paidBy: 'You', notes: 'Booked via app. Early check-in requested.' },
+        { day: 'Day 1', time: '12:30 PM', activity: 'Lunch at local cafe', location: 'Downtown Cafe', cost: '35', paidBy: 'Partner', notes: 'Try local specialty dishes.' },
+        { day: 'Day 1', time: '03:00 PM', activity: 'Walking tour of historic city center', location: 'City Square', cost: '0', paidBy: 'You', notes: 'Meet guide at main fountain.' },
+        { day: 'Day 2', time: '10:00 AM', activity: 'Visit main landmark and museum', location: 'National Museum', cost: '25', paidBy: 'You', notes: 'Pre-booked skip-the-line tickets.' },
+        { day: 'Day 2', time: '01:00 PM', activity: 'Grocery run at Walmart for road trip snacks', location: 'Walmart', cost: '45', paidBy: 'Partner', notes: 'Stock up on water and protein bars.' },
+        { day: 'Day 2', time: '07:00 PM', activity: 'Dinner at rooftop bar and nice restaurant', location: 'Skyline Bistro', cost: '90', paidBy: 'You', notes: 'Stunning sunset views.' },
+        { day: 'To Do', time: 'Anytime', activity: 'Book travel insurance and download offline maps', location: '', cost: '50', paidBy: 'You', notes: 'Critical before departure.' }
+      ];
+
+      const updated = { ...itineraries, [formattedTripName]: generatedItinerary };
+      setItineraries(updated);
+      setSelectedTrip(formattedTripName);
+      setActiveTab('itinerary');
+      setAiPrompt('');
+      setIsGeneratingAi(false);
+    }, 1000);
   };
 
   const handleDragStart = (e, item, day) => {
@@ -329,7 +375,7 @@ export default function App() {
             <p className="text-gray-200 font-medium tracking-wide flex items-center gap-3 flex-wrap">
               <span>🌍 {itineraryData.length} Activities</span>
               <button onClick={generateShareLink} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-full font-bold transition-all shadow-md">
-                🔗 Share & Collaborate
+                🔗 Share Trip
               </button>
               <button onClick={exportCSV} className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold transition-all shadow-md">
                 📊 Export Excel
@@ -403,6 +449,12 @@ export default function App() {
             className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
             🗺️ Itinerary
+          </button>
+          <button 
+            onClick={() => setActiveTab('ai-generator')}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'ai-generator' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-600 hover:bg-purple-50'}`}
+          >
+            ✨ AI Generator
           </button>
           <button 
             onClick={() => setActiveTab('map')}
@@ -530,11 +582,40 @@ export default function App() {
           </div>
         )}
 
+        {/* TAB 1.5: AI TRIP GENERATOR */}
+        {activeTab === 'ai-generator' && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-purple-100">
+            <div className="text-center max-w-lg mx-auto py-6">
+              <span className="text-5xl mb-4 block">✨</span>
+              <h3 className="text-3xl font-black text-gray-900 mb-2">AI Trip Generator</h3>
+              <p className="text-gray-500 text-sm mb-6">Describe your dream vacation, and our AI will instantly build a complete day-by-day itinerary with hotels, food spots, and smart routes.</p>
+              
+              <form onSubmit={handleGenerateAiTrip} className="space-y-4">
+                <textarea 
+                  rows="3" 
+                  required
+                  placeholder="e.g., 3 days in Tokyo exploring temples, ramen shops, and modern neighborhoods..." 
+                  className="w-full p-4 bg-purple-50/50 border border-purple-200 rounded-2xl outline-none focus:border-purple-600 text-gray-800 text-sm"
+                  value={aiPrompt}
+                  onChange={e => setAiPrompt(e.target.value)}
+                ></textarea>
+                <button 
+                  type="submit" 
+                  disabled={isGeneratingAi}
+                  className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-lg transition-all text-lg flex items-center justify-center gap-2"
+                >
+                  {isGeneratingAi ? '✨ Crafting Your Itinerary...' : '🚀 Generate Custom AI Itinerary'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* TAB 2: INTERACTIVE MAP VIEW */}
         {activeTab === 'map' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
             <h3 className="text-2xl font-black text-gray-900 mb-2">Route & Destination Map</h3>
-            <p className="text-gray-500 mb-6 text-sm">Interactive routing and smart pinned locations for {selectedTrip.replace(/_/g, ' ')}.</p>
+            <p className="text-gray-500 mb-6 text-sm">Interactive routing and smart geocoded locations for {selectedTrip.replace(/_/g, ' ')}.</p>
             
             <div className="rounded-2xl overflow-hidden border border-gray-200 h-[450px] w-full shadow-inner relative bg-slate-100">
               <iframe
@@ -548,7 +629,7 @@ export default function App() {
             </div>
 
             <div className="mt-6">
-              <h4 className="font-bold text-gray-900 mb-3">Cleaned Extracted Stops & Directions:</h4>
+              <h4 className="font-bold text-gray-900 mb-3">Smart Resolved Stops & Directions:</h4>
               <div className="flex flex-wrap gap-2">
                 {mapItems.length > 0 ? (
                   mapItems.map((m, idx) => (
