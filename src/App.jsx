@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 export default function App() {
   const [itineraries, setItineraries] = useState({});
   const [selectedTrip, setSelectedTrip] = useState('');
-  const [activeTab, setActiveTab] = useState('itinerary'); // 'itinerary', 'map', 'vault', 'budget', 'todo'
+  const [activeTab, setActiveTab] = useState('itinerary'); // 'itinerary', 'map', 'budget', 'vault', 'todo'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedNotes, setExpandedNotes] = useState({});
@@ -23,6 +23,22 @@ export default function App() {
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
 
   useEffect(() => {
+    // Check if URL has a shared trip encoded in parameters
+    const params = new URLSearchParams(window.location.search);
+    const sharedTripData = params.get('tripData');
+
+    if (sharedTripData) {
+      try {
+        const decoded = JSON.parse(decodeURIComponent(atob(sharedTripData)));
+        setItineraries(decoded);
+        const firstKey = Object.keys(decoded)[0];
+        if (firstKey) setSelectedTrip(firstKey);
+        return;
+      } catch (err) {
+        console.error("Failed to parse shared trip data", err);
+      }
+    }
+
     const savedData = localStorage.getItem('myTravelData');
     if (savedData) {
       const parsed = JSON.parse(savedData);
@@ -68,9 +84,9 @@ export default function App() {
 
   const getCategory = (text) => {
     const t = text.toLowerCase();
-    if (t.includes('hotel') || t.includes('motel') || t.includes('airbnb')) return 'Hotel';
+    if (t.includes('hotel') || t.includes('motel') || t.includes('airbnb') || t.includes('stay')) return 'Hotel';
     if (t.includes('flight') || t.includes('airport') || t.includes('terminal')) return 'Transport';
-    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('food') || t.includes('eat') || t.includes('restaurant')) return 'Food';
+    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('food') || t.includes('eat') || t.includes('restaurant') || t.includes('walmart') || t.includes('grocery')) return 'Food';
     if (t.includes('drive') || t.includes('car') || t.includes('uber') || t.includes('road') || t.includes('train') || t.includes('station') || t.includes('bus') || t.includes('ferry')) return 'Transport';
     if (t.includes('hike') || t.includes('park') || t.includes('canyon') || t.includes('tour') || t.includes('zoo') || t.includes('museum')) return 'Activity';
     if (t.includes('bar') || t.includes('club') || t.includes('drink')) return 'Nightlife';
@@ -96,6 +112,15 @@ export default function App() {
     if (cat === 'Nightlife') return '🍸';
     if (cat === 'Activity') return '🌲';
     return '📌';
+  };
+
+  // SMART LOCATION PARSER: Cleans messy activity text to find real map locations & links
+  const getSmartLocation = (item) => {
+    if (item.location && item.location.trim() !== '') return item.location;
+    let text = item.activity || '';
+    // Strip common filler prefixes
+    text = text.replace(/^(drive to|stay at|visit|dinner at|lunch at|breakfast at|flight to|arrive at|check in at|stop at)\s+/i, '');
+    return text;
   };
 
   const toggleNote = (index) => {
@@ -133,15 +158,28 @@ export default function App() {
     downloadAnchor.remove();
   };
 
-  // Extract unique locations for Map view
-  const mapLocations = itineraryData.filter(item => item.location).map(item => item.location);
+  // Shareable Trip Link Generator
+  const generateShareLink = () => {
+    const tripJson = JSON.stringify({ [selectedTrip]: itineraries[selectedTrip] });
+    const encoded = btoa(encodeURIComponent(tripJson));
+    const shareUrl = `${window.location.origin}${window.location.pathname}?tripData=${encoded}`;
+    navigator.clipboard.writeText(shareUrl);
+    alert('🔗 Shareable trip link copied to clipboard! Anyone with this link can view and explore this itinerary.');
+  };
+
+  // One-Tap PDF / Print Handler
+  const handlePrintPDF = () => {
+    window.print();
+  };
+
+  const mapLocations = itineraryData.map(item => getSmartLocation(item)).filter(Boolean);
   const primaryMapLocation = mapLocations.length > 0 ? mapLocations[0] : selectedTrip.replace(/_/g, ' ');
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800 pb-24">
       
       {/* Hero Cover Image */}
-      <div className="relative h-64 md:h-80 w-full bg-slate-900 overflow-hidden">
+      <div className="relative h-64 md:h-80 w-full bg-slate-900 overflow-hidden print:hidden">
         <img 
           src={
             selectedTrip.toLowerCase().includes('usa') ? "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80" :
@@ -164,8 +202,14 @@ export default function App() {
             </h1>
             <p className="text-gray-200 font-medium tracking-wide flex items-center gap-3 flex-wrap">
               <span>🌍 {itineraryData.length} Activities</span>
-              <button onClick={exportData} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md transition-all">
-                📥 Export Backup
+              <button onClick={generateShareLink} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-full font-bold transition-all shadow-md">
+                🔗 Share Trip Link
+              </button>
+              <button onClick={handlePrintPDF} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md transition-all font-bold">
+                🖨️ Export PDF
+              </button>
+              <button onClick={exportData} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md transition-all">
+                📥 JSON Backup
               </button>
             </p>
           </div>
@@ -192,7 +236,7 @@ export default function App() {
       <main className="max-w-4xl mx-auto px-4 md:px-8 -mt-6 relative z-10">
         
         {/* Global Search Bar */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-2 mb-4 flex items-center">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-2 mb-4 flex items-center print:hidden">
           <span className="pl-4 text-gray-400 text-xl">🔍</span>
           <input 
             type="text" 
@@ -208,7 +252,7 @@ export default function App() {
 
         {/* Category Filter Pills */}
         {activeTab === 'itinerary' && (
-          <div className="flex gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar">
+          <div className="flex gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar print:hidden">
             {['All', 'Food', 'Transport', 'Hotel', 'Activity', 'Nightlife'].map((cat) => (
               <button
                 key={cat}
@@ -227,7 +271,7 @@ export default function App() {
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1 mb-8 overflow-x-auto">
+        <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1 mb-8 overflow-x-auto print:hidden">
           <button 
             onClick={() => setActiveTab('itinerary')}
             className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
@@ -275,6 +319,7 @@ export default function App() {
                     const uniqueKey = `${day}-${index}`;
                     const isLongNote = item.notes && item.notes.length > 100;
                     const isExpanded = expandedNotes[uniqueKey];
+                    const smartLoc = getSmartLocation(item);
 
                     return (
                       <div key={index} className="relative group">
@@ -290,21 +335,22 @@ export default function App() {
                             </div>
                           </div>
                           
-                          {/* Photo Pinning Display */}
+                          {/* Photo Pinning */}
                           {item.photo && (
                             <div className="mb-3 overflow-hidden rounded-xl h-48 border border-gray-200">
                               <img src={item.photo} alt={item.activity} className="w-full h-full object-cover" />
                             </div>
                           )}
 
-                          {item.location && (
+                          {/* Smart Map / Location Link */}
+                          {smartLoc && (
                             <a 
-                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}`} 
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(smartLoc)}`} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800 mt-2 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 transition-colors"
                             >
-                              <span>📍</span> {item.location} ↗
+                              <span>📍</span> {smartLoc} ↗
                             </a>
                           )}
                           
@@ -337,7 +383,7 @@ export default function App() {
         {activeTab === 'map' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
             <h3 className="text-2xl font-black text-gray-900 mb-2">Route & Destination Map</h3>
-            <p className="text-gray-500 mb-6 text-sm">Interactive routing and pins for {selectedTrip.replace(/_/g, ' ')}.</p>
+            <p className="text-gray-500 mb-6 text-sm">Interactive routing and smart pinned locations for {selectedTrip.replace(/_/g, ' ')}.</p>
             
             <div className="rounded-2xl overflow-hidden border border-gray-200 h-[450px] w-full shadow-inner relative bg-slate-100">
               <iframe
@@ -351,7 +397,7 @@ export default function App() {
             </div>
 
             <div className="mt-6">
-              <h4 className="font-bold text-gray-900 mb-3">Pinned Stops on this Trip:</h4>
+              <h4 className="font-bold text-gray-900 mb-3">Smart Extracted Stops & Hotels:</h4>
               <div className="flex flex-wrap gap-2">
                 {mapLocations.length > 0 ? (
                   mapLocations.map((loc, idx) => (
@@ -366,7 +412,7 @@ export default function App() {
                     </a>
                   ))
                 ) : (
-                  <p className="text-sm text-gray-400 italic">No specific location pins found in this itinerary.</p>
+                  <p className="text-sm text-gray-400 italic">No location stops found.</p>
                 )}
               </div>
             </div>
@@ -556,7 +602,7 @@ export default function App() {
       {/* Floating Add Button */}
       <button 
         onClick={() => setIsModalOpen(true)}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl hover:bg-blue-700 hover:scale-105 transition-all duration-200 flex items-center justify-center text-3xl font-light z-40"
+        className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl hover:bg-blue-700 hover:scale-105 transition-all duration-200 flex items-center justify-center text-3xl font-light z-40 print:hidden"
       >
         +
       </button>
@@ -584,13 +630,13 @@ export default function App() {
               
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Activity *</label>
-                <input required type="text" placeholder="e.g. Dinner at Bokamorra" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.activity} onChange={e => setNewActivity({...newActivity, activity: e.target.value})} />
+                <input required type="text" placeholder="e.g. Walmart / Hotel Stay" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.activity} onChange={e => setNewActivity({...newActivity, activity: e.target.value})} />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Location</label>
-                  <input type="text" placeholder="e.g. Split, Croatia" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} />
+                  <input type="text" placeholder="e.g. Los Angeles, CA" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Cost ($)</label>
