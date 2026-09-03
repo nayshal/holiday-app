@@ -1,9 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Custom Map Marker to avoid default Leaflet broken image issues
+const customPinIcon = L.divIcon({
+  html: `<div style="background-color: #2563eb; color: white; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 16px;">📍</div>`,
+  className: 'custom-leaflet-icon',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32]
+});
 
 export default function App() {
   const [itineraries, setItineraries] = useState({});
   const [selectedTrip, setSelectedTrip] = useState('');
-  const [activeTab, setActiveTab] = useState('itinerary'); // 'itinerary', 'ai-generator', 'map', 'budget', 'split', 'packing', 'journal', 'vault', 'todo'
+  const [activeTab, setActiveTab] = useState('itinerary');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedNotes, setExpandedNotes] = useState({});
@@ -22,12 +34,10 @@ export default function App() {
   const [groupMembers, setGroupMembers] = useState(['You', 'Partner']);
   const [newMemberName, setNewMemberName] = useState('');
 
-  // Packing list state
+  // Packing list & Journal states
   const [packingItems, setPackingItems] = useState(JSON.parse(localStorage.getItem('travelPackingItems') || '[]'));
   const [newPackingText, setNewPackingText] = useState('');
   const [newPackingAssignee, setNewPackingAssignee] = useState('You');
-
-  // Travel Journal state
   const [journalEntries, setJournalEntries] = useState(JSON.parse(localStorage.getItem('travelJournalEntries') || '[]'));
   const [newJournal, setNewJournal] = useState({ title: '', photoUrl: '', date: '', text: '' });
   const [isJournalModalOpen, setIsJournalModalOpen] = useState(false);
@@ -40,7 +50,8 @@ export default function App() {
   const [newDoc, setNewDoc] = useState({ title: '', refNumber: '', notes: '' });
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
 
-  // Drag and drop state tracking
+  // Geocoding Cache for Leaflet Map
+  const [geoCache, setGeoCache] = useState(JSON.parse(localStorage.getItem('travelGeoCache') || '{}'));
   const [draggingItem, setDraggingItem] = useState(null);
 
   useEffect(() => {
@@ -83,15 +94,10 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('travelVaultDocs', JSON.stringify(vaultDocs));
-  }, [vaultDocs]);
-
-  useEffect(() => {
     localStorage.setItem('travelPackingItems', JSON.stringify(packingItems));
-  }, [packingItems]);
-
-  useEffect(() => {
     localStorage.setItem('travelJournalEntries', JSON.stringify(journalEntries));
-  }, [journalEntries]);
+    localStorage.setItem('travelGeoCache', JSON.stringify(geoCache));
+  }, [vaultDocs, packingItems, journalEntries, geoCache]);
 
   if (!selectedTrip && Object.keys(itineraries).length === 0) {
     return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
@@ -116,9 +122,9 @@ export default function App() {
     const t = text.toLowerCase();
     if (t.includes('hotel') || t.includes('motel') || t.includes('airbnb') || t.includes('stay')) return 'Hotel';
     if (t.includes('flight') || t.includes('airport') || t.includes('terminal')) return 'Transport';
-    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('food') || t.includes('eat') || t.includes('restaurant') || t.includes('walmart') || t.includes('grocery') || t.includes('cafe') || t.includes('coffee')) return 'Food';
-    if (t.includes('drive') || t.includes('car') || t.includes('uber') || t.includes('road') || t.includes('train') || t.includes('station') || t.includes('bus') || t.includes('ferry') || t.includes('gas')) return 'Transport';
-    if (t.includes('hike') || t.includes('park') || t.includes('canyon') || t.includes('tour') || t.includes('zoo') || t.includes('museum') || t.includes('temple') || t.includes('shrine')) return 'Activity';
+    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('food') || t.includes('eat') || t.includes('restaurant') || t.includes('walmart') || t.includes('grocery') || t.includes('cafe')) return 'Food';
+    if (t.includes('drive') || t.includes('car') || t.includes('uber') || t.includes('road') || t.includes('train') || t.includes('station') || t.includes('bus') || t.includes('gas')) return 'Transport';
+    if (t.includes('hike') || t.includes('park') || t.includes('canyon') || t.includes('tour') || t.includes('zoo') || t.includes('museum') || t.includes('temple')) return 'Activity';
     if (t.includes('bar') || t.includes('club') || t.includes('drink')) return 'Nightlife';
     return 'Other';
   };
@@ -160,7 +166,6 @@ export default function App() {
     
     if (!rawLoc) return null;
     const lower = rawLoc.toLowerCase();
-
     const ignoreList = ['do', 'lunch and a walk', 'prep for clothes', 'chill at hotel', 'then go for dinner and relax'];
     if (ignoreList.includes(lower)) return null;
 
@@ -172,8 +177,8 @@ export default function App() {
       let origin = parts[0].replace(/^(drive to|stay at|visit)\s+/i, '').trim();
       let dest = parts[parts.length - 1].trim();
 
-      if (origin.toLowerCase() === 'hotel' || origin.toLowerCase() === 'motel' || origin.toLowerCase() === 'the hotel') origin = hotelAddress;
-      if (dest.toLowerCase() === 'hotel' || dest.toLowerCase() === 'motel' || dest.toLowerCase() === 'the hotel') dest = hotelAddress;
+      if (origin.toLowerCase() === 'hotel' || origin.toLowerCase() === 'motel') origin = hotelAddress;
+      if (dest.toLowerCase() === 'hotel' || dest.toLowerCase() === 'motel') dest = hotelAddress;
 
       if (origin.toLowerCase().includes('walmart')) origin = `Walmart Supercenter, ${tripCity}`;
       if (dest.toLowerCase().includes('walmart')) dest = `Walmart Supercenter, ${tripCity}`;
@@ -185,10 +190,7 @@ export default function App() {
       if (!origin.toLowerCase().includes(tripCity.toLowerCase())) origin = `${origin}, ${tripCity}`;
       if (!dest.toLowerCase().includes(tripCity.toLowerCase())) dest = `${dest}, ${tripCity}`;
 
-      return {
-        label: rawLoc,
-        url: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}`
-      };
+      return { label: rawLoc, query: dest, url: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}` };
     }
 
     let cleanQuery = rawLoc.replace(/^(drive to|stay at|visit|dinner at|lunch at|breakfast at|flight to|arrive at|check in at|stop at)\s+/i, '').trim();
@@ -203,11 +205,53 @@ export default function App() {
       cleanQuery = `${cleanQuery}, ${tripCity}`;
     }
 
-    return {
-      label: rawLoc,
-      url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanQuery)}`
-    };
+    return { label: rawLoc, query: cleanQuery, url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanQuery)}` };
   };
+
+  const mapItems = itineraryData.map(item => getMapLinkData(item)).filter(Boolean);
+
+  // AUTOMATIC GEOCODING ENGINE
+  useEffect(() => {
+    if (activeTab !== 'map') return;
+    
+    // Find items not yet in the cache
+    const locationsToFetch = [...new Set(mapItems.map(m => m.query))].filter(q => geoCache[q] === undefined);
+    
+    if (locationsToFetch.length === 0) return;
+
+    let isMounted = true;
+    const fetchCoordinates = async () => {
+      let currentCache = { ...geoCache };
+      
+      for (const loc of locationsToFetch) {
+        if (!isMounted) break;
+        try {
+          // Use OpenStreetMap Nominatim for free public geocoding
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(loc)}&limit=1`);
+          const data = await res.json();
+          if (data && data.length > 0) {
+            currentCache[loc] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+          } else {
+            currentCache[loc] = 'NOT_FOUND';
+          }
+          setGeoCache({ ...currentCache });
+          // Sleep for 1 second between requests to respect Nominatim free limits
+          await new Promise(r => setTimeout(r, 1100)); 
+        } catch(e) {
+          console.error("Geocoding failed for:", loc, e);
+        }
+      }
+    };
+    
+    fetchCoordinates();
+    return () => { isMounted = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, JSON.stringify(mapItems.map(m => m.query))]);
+
+  const resolvedMarkers = mapItems.map(item => ({
+    ...item,
+    coords: geoCache[item.query] !== 'NOT_FOUND' ? geoCache[item.query] : null
+  })).filter(m => m.coords);
 
   const getRouteLegEstimate = (index, arr) => {
     if (index === 0) return null;
@@ -314,7 +358,6 @@ export default function App() {
       totalBudget += val;
       const cat = getCategory(item.activity);
       categoryTotals[cat] = (categoryTotals[cat] || 0) + val;
-
       const payer = item.paidBy || 'You';
       memberPaidTotals[payer] = (memberPaidTotals[payer] || 0) + val;
     }
@@ -359,9 +402,6 @@ export default function App() {
   const handlePrintPDF = () => {
     window.print();
   };
-
-  const mapItems = itineraryData.map(item => getMapLinkData(item)).filter(Boolean);
-  const primaryMapLocation = mapItems.length > 0 ? mapItems[0].label : selectedTrip.replace(/_/g, ' ');
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800 pb-24">
@@ -603,7 +643,7 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 1.5: GEMINI AI TRIP GENERATOR */}
+        {/* TAB 1.5: SECURE SERVERLESS GEMINI AI TRIP GENERATOR */}
         {activeTab === 'ai-generator' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-purple-100">
             <div className="max-w-xl mx-auto py-6">
@@ -638,42 +678,57 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: INTERACTIVE MAP VIEW */}
+        {/* TAB 2: NATIVE INTERACTIVE LEAFLET MAP VIEW */}
         {activeTab === 'map' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-            <h3 className="text-2xl font-black text-gray-900 mb-2">Route & Destination Map</h3>
-            <p className="text-gray-500 mb-6 text-sm">Interactive routing and smart geocoded locations for {selectedTrip.replace(/_/g, ' ')}.</p>
-            
-            <div className="rounded-2xl overflow-hidden border border-gray-200 h-[450px] w-full shadow-inner relative bg-slate-100">
-              <iframe
-                title="Trip Route Map"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(primaryMapLocation)}&t=&z=11&ie=UTF8&iwloc=&output=embed`}
-              ></iframe>
-            </div>
-
-            <div className="mt-6">
-              <h4 className="font-bold text-gray-900 mb-3">Smart Resolved Stops & Directions:</h4>
-              <div className="flex flex-wrap gap-2">
-                {mapItems.length > 0 ? (
-                  mapItems.map((m, idx) => (
-                    <a 
-                      key={idx} 
-                      href={m.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="bg-gray-100 hover:bg-blue-50 border border-gray-200 hover:border-blue-200 text-gray-700 hover:text-blue-600 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5"
-                    >
-                      <span>📍</span> {m.label}
-                    </a>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-400 italic">No valid location stops found.</p>
-                )}
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">Interactive Map Hub</h3>
+                <p className="text-gray-500 text-sm">Real-time mapped locations automatically extracted from your itinerary.</p>
               </div>
+              <span className="bg-emerald-100 text-emerald-800 font-bold px-3 py-1 text-xs rounded-full">
+                {resolvedMarkers.length} Locations Pinned
+              </span>
+            </div>
+            
+            <div className="rounded-2xl overflow-hidden border border-gray-200 h-[500px] w-full shadow-inner relative bg-slate-100">
+              {resolvedMarkers.length > 0 ? (
+                <MapContainer 
+                  center={resolvedMarkers[0].coords} 
+                  zoom={12} 
+                  scrollWheelZoom={true}
+                  style={{ height: '100%', width: '100%', zIndex: 0 }}
+                >
+                  <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors'
+                  />
+                  
+                  {resolvedMarkers.map((marker, idx) => (
+                    <Marker key={idx} position={marker.coords} icon={customPinIcon}>
+                      <Popup className="font-sans">
+                        <strong className="text-sm block mb-1">{marker.label}</strong>
+                        <a href={marker.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs font-bold">Get Directions ↗</a>
+                      </Popup>
+                    </Marker>
+                  ))}
+                  
+                  {/* Draw route lines between consecutive stops */}
+                  {resolvedMarkers.length > 1 && (
+                    <Polyline 
+                      positions={resolvedMarkers.map(m => m.coords)} 
+                      color="#3b82f6" 
+                      weight={3} 
+                      dashArray="5, 10" 
+                    />
+                  )}
+                </MapContainer>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                  <span className="text-4xl mb-2 animate-bounce">📍</span>
+                  <p className="font-semibold">Geocoding map locations...</p>
+                </div>
+              )}
             </div>
           </div>
         )}
