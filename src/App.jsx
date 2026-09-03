@@ -8,9 +8,8 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedNotes, setExpandedNotes] = useState({});
   
-  // AI Trip Generator states
+  // AI Trip Generator state
   const [aiPrompt, setAiPrompt] = useState('');
-  const [geminiApiKey, setGeminiApiKey] = useState(localStorage.getItem('geminiApiKey') || '');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
   // Modal states
@@ -75,10 +74,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('travelVaultDocs', JSON.stringify(vaultDocs));
   }, [vaultDocs]);
-
-  useEffect(() => {
-    localStorage.setItem('geminiApiKey', geminiApiKey);
-  }, [geminiApiKey]);
 
   if (!selectedTrip && Object.keys(itineraries).length === 0) {
     return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
@@ -220,58 +215,33 @@ export default function App() {
     setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '', paidBy: 'You' });
   };
 
-  // REAL GEMINI AI TRIP GENERATOR API CALL
+  // CALL SERVERLESS BACKEND (NO API KEY IN BROWSER)
   const handleGenerateAiTrip = async (e) => {
     e.preventDefault();
     if (!aiPrompt.trim()) return;
-    if (!geminiApiKey.trim()) {
-      alert('Please enter your Gemini API key first!');
-      return;
-    }
-
     setIsGeneratingAi(true);
 
-    const systemPrompt = `You are an expert travel planner. Create a detailed travel itinerary for the prompt: "${aiPrompt}". 
-    Return ONLY a valid JSON array of objects. Do not include markdown code blocks like \`\`\`json, just return the raw JSON array string.
-    Each object must have these exact keys:
-    - "day": string (e.g., "Day 1", "Day 2", "To Do")
-    - "time": string (e.g., "09:00 AM")
-    - "activity": string (e.g., "Visit Eiffel Tower")
-    - "location": string (e.g., "Eiffel Tower, Paris")
-    - "cost": string (e.g., "30" or "0")
-    - "paidBy": string ("You")
-    - "notes": string (short tips or booking info)`;
-
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+      const res = await fetch('/api/generate-trip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: systemPrompt }] }]
-        })
+        body: JSON.stringify({ prompt: aiPrompt })
       });
 
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error.message || 'Gemini API Error');
-      }
-
-      const textResponse = data.candidates[0].content.parts[0].text;
-      // Clean potential markdown blocks if present
-      const cleanedJsonStr = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsedItinerary = JSON.parse(cleanedJsonStr);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
 
       const tripName = aiPrompt.split(' ').slice(0, 3).join('_').replace(/[^a-zA-Z0-9_]/g, '') || 'AI_Trip';
       const formattedTripName = tripName.charAt(0).toUpperCase() + tripName.slice(1);
 
-      const updated = { ...itineraries, [formattedTripName]: parsedItinerary };
+      const updated = { ...itineraries, [formattedTripName]: data.itinerary };
       setItineraries(updated);
       setSelectedTrip(formattedTripName);
       setActiveTab('itinerary');
       setAiPrompt('');
     } catch (err) {
       console.error(err);
-      alert('Failed to generate AI trip. Please check your Gemini API key and try again.');
+      alert('Failed to generate AI trip: ' + err.message);
     } finally {
       setIsGeneratingAi(false);
     }
@@ -605,34 +575,21 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 1.5: REAL GEMINI AI TRIP GENERATOR */}
+        {/* TAB 1.5: SECURE SERVERLESS GEMINI AI TRIP GENERATOR */}
         {activeTab === 'ai-generator' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-purple-100">
             <div className="max-w-xl mx-auto py-6">
               <div className="text-center mb-6">
                 <span className="text-5xl mb-4 block">✨</span>
                 <h3 className="text-3xl font-black text-gray-900 mb-2">Gemini AI Trip Generator</h3>
-                <p className="text-gray-500 text-sm">Enter your Gemini API key and prompt to instantly generate a fully structured live itinerary.</p>
+                <p className="text-gray-500 text-sm">Enter a vacation prompt below to instantly generate a fully structured live itinerary using secure server-side AI.</p>
               </div>
               
               <form onSubmit={handleGenerateAiTrip} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Gemini API Key</label>
-                  <input 
-                    type="password" 
-                    required
-                    placeholder="AIzaSy..." 
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-purple-600 text-sm font-mono"
-                    value={geminiApiKey}
-                    onChange={e => setGeminiApiKey(e.target.value)}
-                  />
-                  <p className="text-[11px] text-gray-400 mt-1">Your key is stored securely in your browser's local storage.</p>
-                </div>
-
-                <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Vacation Prompt</label>
                   <textarea 
-                    rows="3" 
+                    rows="4" 
                     required
                     placeholder="e.g., 3 days in Tokyo exploring historic temples, authentic ramen shops, and modern electronics districts..." 
                     className="w-full p-4 bg-purple-50/50 border border-purple-200 rounded-2xl outline-none focus:border-purple-600 text-gray-800 text-sm"
@@ -1036,7 +993,7 @@ export default function App() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Reference Number / Code *</label>
-                <input required type="text" placeholder="e.g. AB123456" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none font-mono" value={newDoc.refNumber} onChange={e => setNewDoc({...newDoc, refNumber: e.target.value})} />
+                <input type="text" placeholder="e.g. AB123456" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none font-mono" value={newDoc.refNumber} onChange={e => setNewDoc({...newDoc, refNumber: e.target.value})} />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Secure Notes</label>
