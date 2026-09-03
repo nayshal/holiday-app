@@ -1,4 +1,3 @@
-// api/generate-trip.js
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -12,16 +11,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    const systemPrompt = `You are an expert travel planner. Create a detailed travel itinerary for the prompt: "${prompt}". 
-    Return ONLY a valid JSON array of objects. Do not include markdown code blocks like \`\`\`json, just return the raw JSON array string.
-    Each object must have these exact keys:
+    const systemPrompt = `You are a strict, dedicated travel and holiday planning assistant. Your sole purpose is to create travel itineraries, road trips, and vacation plans. 
+    Analyze the user prompt: "${prompt}". 
+    
+    If the prompt is NOT about travel, vacations, road trips, or holiday planning, you MUST return ONLY this exact JSON array:
+    [{"day": "Error", "time": "N/A", "activity": "Invalid Request: This AI is strictly for holiday planning only.", "location": "", "cost": "0", "paidBy": "You", "notes": "Please enter a valid vacation or travel prompt."}]
+
+    If it IS a valid holiday or travel prompt, return ONLY a valid JSON array of itinerary objects with these exact keys:
     - "day": string (e.g., "Day 1", "Day 2", "To Do")
     - "time": string (e.g., "09:00 AM")
     - "activity": string (e.g., "Visit Eiffel Tower")
     - "location": string (e.g., "Eiffel Tower, Paris")
     - "cost": string (e.g., "30" or "0")
     - "paidBy": string ("You")
-    - "notes": string (short tips or booking info)`;
+    - "notes": string (short tips or booking info)
+    
+    Return ONLY raw JSON, with no markdown code blocks like \`\`\`json.`;
 
     const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',

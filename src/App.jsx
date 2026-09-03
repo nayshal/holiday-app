@@ -135,6 +135,7 @@ export default function App() {
     return `${selectedTrip.replace(/_/g, ' ')} hotel`;
   };
 
+  // SMART GEOCODING RESOLVER: Finds closest Walmart, Target, Hotel, etc. and attaches city context
   const getMapLinkData = (item) => {
     const rawLoc = item.location && item.location.trim() !== '' && !item.location.toLowerCase().includes('drive') 
       ? item.location 
@@ -215,7 +216,7 @@ export default function App() {
     setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '', paidBy: 'You' });
   };
 
-  // CALL SERVERLESS BACKEND (NO API KEY IN BROWSER)
+  // CALL SERVERLESS BACKEND (GEMINI AI TRIP GENERATOR)
   const handleGenerateAiTrip = async (e) => {
     e.preventDefault();
     if (!aiPrompt.trim()) return;
@@ -230,6 +231,12 @@ export default function App() {
 
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+
+      if (data.itinerary && data.itinerary[0]?.day === 'Error') {
+        alert(data.itinerary[0].activity);
+        setIsGeneratingAi(false);
+        return;
+      }
 
       const tripName = aiPrompt.split(' ').slice(0, 3).join('_').replace(/[^a-zA-Z0-9_]/g, '') || 'AI_Trip';
       const formattedTripName = tripName.charAt(0).toUpperCase() + tripName.slice(1);
@@ -575,7 +582,7 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 1.5: SECURE SERVERLESS GEMINI AI TRIP GENERATOR */}
+        {/* TAB 1.5: GEMINI AI TRIP GENERATOR */}
         {activeTab === 'ai-generator' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-purple-100">
             <div className="max-w-xl mx-auto py-6">
