@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 export default function App() {
   const [itineraries, setItineraries] = useState({});
   const [selectedTrip, setSelectedTrip] = useState('');
-  const [activeTab, setActiveTab] = useState('itinerary'); // 'itinerary', 'ai-generator', 'map', 'budget', 'split', 'vault', 'todo'
+  const [activeTab, setActiveTab] = useState('itinerary'); // 'itinerary', 'ai-generator', 'map', 'budget', 'split', 'packing', 'journal', 'vault', 'todo'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedNotes, setExpandedNotes] = useState({});
@@ -21,6 +21,16 @@ export default function App() {
   // Expense Splitting & Members
   const [groupMembers, setGroupMembers] = useState(['You', 'Partner']);
   const [newMemberName, setNewMemberName] = useState('');
+
+  // Packing list state
+  const [packingItems, setPackingItems] = useState(JSON.parse(localStorage.getItem('travelPackingItems') || '[]'));
+  const [newPackingText, setNewPackingText] = useState('');
+  const [newPackingAssignee, setNewPackingAssignee] = useState('You');
+
+  // Travel Journal state
+  const [journalEntries, setJournalEntries] = useState(JSON.parse(localStorage.getItem('travelJournalEntries') || '[]'));
+  const [newJournal, setNewJournal] = useState({ title: '', photoUrl: '', date: '', text: '' });
+  const [isJournalModalOpen, setIsJournalModalOpen] = useState(false);
 
   // Vault states
   const [vaultUnlocked, setVaultUnlocked] = useState(false);
@@ -74,6 +84,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('travelVaultDocs', JSON.stringify(vaultDocs));
   }, [vaultDocs]);
+
+  useEffect(() => {
+    localStorage.setItem('travelPackingItems', JSON.stringify(packingItems));
+  }, [packingItems]);
+
+  useEffect(() => {
+    localStorage.setItem('travelJournalEntries', JSON.stringify(journalEntries));
+  }, [journalEntries]);
 
   if (!selectedTrip && Object.keys(itineraries).length === 0) {
     return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
@@ -135,7 +153,6 @@ export default function App() {
     return `${selectedTrip.replace(/_/g, ' ')} hotel`;
   };
 
-  // SMART GEOCODING RESOLVER: Finds closest Walmart, Target, Hotel, etc. and attaches city context
   const getMapLinkData = (item) => {
     const rawLoc = item.location && item.location.trim() !== '' && !item.location.toLowerCase().includes('drive') 
       ? item.location 
@@ -216,7 +233,6 @@ export default function App() {
     setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '', paidBy: 'You' });
   };
 
-  // CALL SERVERLESS BACKEND (GEMINI AI TRIP GENERATOR)
   const handleGenerateAiTrip = async (e) => {
     e.preventDefault();
     if (!aiPrompt.trim()) return;
@@ -460,7 +476,7 @@ export default function App() {
             onClick={() => setActiveTab('map')}
             className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'map' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
-            📍 Map View
+            📍 Map
           </button>
           <button 
             onClick={() => setActiveTab('budget')}
@@ -472,20 +488,25 @@ export default function App() {
             onClick={() => setActiveTab('split')}
             className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'split' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
-            ⚖️ Split Ledger
+            ⚖️ Split
+          </button>
+          <button 
+            onClick={() => setActiveTab('packing')}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'packing' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            🎒 Packing
+          </button>
+          <button 
+            onClick={() => setActiveTab('journal')}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'journal' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            📸 Journal
           </button>
           <button 
             onClick={() => setActiveTab('vault')}
             className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'vault' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
             🔒 Vault
-          </button>
-          <button 
-            onClick={() => setActiveTab('todo')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 flex justify-center items-center gap-1 ${activeTab === 'todo' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            📝 To-Dos
-            {todoData.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{todoData.length}</span>}
           </button>
         </div>
 
@@ -768,7 +789,127 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 5: SECURE TRAVEL DOCUMENT VAULT */}
+        {/* TAB 5: SMART PACKING CHECKLISTS WITH ASSIGNMENTS */}
+        {activeTab === 'packing' && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">🎒 Group Packing Checklist</h3>
+                <p className="text-gray-500 text-sm mt-1">Assign items to specific travelers so everyone knows who is bringing what.</p>
+              </div>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (newPackingText.trim()) {
+                  setPackingItems([...packingItems, { id: Date.now(), text: newPackingText.trim(), assignedTo: newPackingAssignee, packed: false }]);
+                  setNewPackingText('');
+                }
+              }} className="flex gap-2 flex-wrap">
+                <input 
+                  type="text" 
+                  required
+                  placeholder="Item name (e.g., Rain jacket)..." 
+                  className="p-2.5 border border-gray-200 rounded-xl text-sm outline-none"
+                  value={newPackingText}
+                  onChange={e => setNewPackingText(e.target.value)}
+                />
+                <select 
+                  className="p-2.5 border border-gray-200 rounded-xl text-sm outline-none bg-gray-50 font-semibold"
+                  value={newPackingAssignee}
+                  onChange={e => setNewPackingAssignee(e.target.value)}
+                >
+                  {groupMembers.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold">Add Item</button>
+              </form>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {packingItems.length > 0 ? (
+                packingItems.map((item) => (
+                  <div key={item.id} className={`p-4 rounded-2xl border flex items-center justify-between transition-all ${item.packed ? 'bg-emerald-50/40 border-emerald-200 opacity-75' : 'bg-gray-50 border-gray-200'}`}>
+                    <label className="flex items-center gap-3 cursor-pointer flex-1">
+                      <input 
+                        type="checkbox" 
+                        checked={item.packed} 
+                        onChange={() => {
+                          setPackingItems(packingItems.map(i => i.id === item.id ? { ...i, packed: !i.packed } : i));
+                        }}
+                        className="w-5 h-5 rounded text-blue-600 cursor-pointer" 
+                      />
+                      <span className={`font-bold text-gray-900 ${item.packed ? 'line-through text-gray-400' : ''}`}>{item.text}</span>
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-full">👤 {item.assignedTo}</span>
+                      <button 
+                        onClick={() => setPackingItems(packingItems.filter(i => i.id !== item.id))}
+                        className="text-gray-400 hover:text-red-600 font-bold text-sm"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 text-center text-gray-400 py-12">No packing items added yet. Use the form above to assign items.</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: TRAVEL JOURNAL & PHOTO SCRAPBOOK */}
+        {activeTab === 'journal' && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">📸 Travel Journal & Memories</h3>
+                <p className="text-gray-500 text-sm mt-1">Capture daily photo memories, diary entries, and highlights.</p>
+              </div>
+              <button 
+                onClick={() => setIsJournalModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-4 py-2 rounded-xl shadow-md transition-all"
+              >
+                + Add Journal Entry
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {journalEntries.length > 0 ? (
+                journalEntries.map((entry, idx) => (
+                  <div key={idx} className="bg-gray-50 border border-gray-200 rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between">
+                    {entry.photoUrl && (
+                      <div className="h-56 w-full overflow-hidden bg-slate-100 border-b border-gray-200">
+                        <img src={entry.photoUrl} alt={entry.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="p-6 flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-black text-xl text-gray-900">{entry.title}</h4>
+                          <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-full">{entry.date}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 italic leading-relaxed">{entry.text}</p>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                        <button 
+                          onClick={() => setJournalEntries(journalEntries.filter((_, i) => i !== idx))}
+                          className="text-xs text-red-600 font-bold hover:underline"
+                        >
+                          Delete Entry
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 text-center text-gray-400 py-12">No journal entries yet. Click "+ Add Journal Entry" above to start documenting your trip!</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 7: SECURE TRAVEL DOCUMENT VAULT */}
         {activeTab === 'vault' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-6">
@@ -883,27 +1024,9 @@ export default function App() {
             )}
           </div>
         )}
-
-        {/* TAB 6: TO-DO LIST */}
-        {activeTab === 'todo' && (
-          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">Pre-Trip Checklist</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {todoData.map((item, index) => (
-                <label key={index} className="flex items-start gap-4 p-4 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 cursor-pointer">
-                  <input type="checkbox" className="w-5 h-5 mt-0.5 rounded text-blue-600" />
-                  <div>
-                    <span className="font-bold text-gray-900 block">{item.activity}</span>
-                    {item.location && <span className="text-sm text-blue-600 font-medium block mt-1">{item.location}</span>}
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
       </main>
 
-      {/* Floating Add Button */}
+      {/* Floating Add Activity Button */}
       <button 
         onClick={() => setIsModalOpen(true)}
         className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl hover:bg-blue-700 hover:scale-105 transition-all duration-200 flex items-center justify-center text-3xl font-light z-40 print:hidden"
@@ -974,6 +1097,45 @@ export default function App() {
               <button type="submit" className="w-full py-4 mt-2 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg hover:bg-blue-700 transition-colors">
                 Save to Itinerary
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Journal Entry Modal */}
+      {isJournalModalOpen && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-gray-900">Add Journal Entry</h2>
+              <button onClick={() => setIsJournalModalOpen(false)} className="text-gray-400 hover:text-gray-800 text-2xl font-bold">✕</button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setJournalEntries([...journalEntries, newJournal]);
+              setNewJournal({ title: '', photoUrl: '', date: '', text: '' });
+              setIsJournalModalOpen(false);
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Title *</label>
+                <input required type="text" placeholder="e.g. Sunset at Griffith Observatory" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newJournal.title} onChange={e => setNewJournal({...newJournal, title: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Date *</label>
+                  <input required type="text" placeholder="e.g. Day 2" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newJournal.date} onChange={e => setNewJournal({...newJournal, date: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Photo URL *</label>
+                  <input required type="url" placeholder="https://images.unsplash.com/..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newJournal.photoUrl} onChange={e => setNewJournal({...newJournal, photoUrl: e.target.value})} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Story / Memories *</label>
+                <textarea required rows="3" placeholder="Write about your experience..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newJournal.text} onChange={e => setNewJournal({...newJournal, text: e.target.value})}></textarea>
+              </div>
+              <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">Save Entry</button>
             </form>
           </div>
         </div>
