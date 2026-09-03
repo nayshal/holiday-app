@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// 1. GLOBAL ERROR BOUNDARY (Prevents the "Blank White Screen of Death")
+// 1. GLOBAL ERROR BOUNDARY
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -18,7 +18,7 @@ class ErrorBoundary extends React.Component {
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-8 text-center font-sans">
           <span className="text-6xl mb-4">⚠️</span>
           <h1 className="text-3xl font-black text-gray-900 mb-2">App Crashed</h1>
-          <p className="text-gray-500 mb-8 max-w-md">We found corrupted data in your browser's memory (likely from an invalid AI generation). Click below to wipe the cache and restart.</p>
+          <p className="text-gray-500 mb-8 max-w-md">We found corrupted data in your browser's memory. Click below to wipe the cache and restart safely.</p>
           <button 
             onClick={() => { localStorage.clear(); window.location.href = '/'; }}
             className="bg-blue-600 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:bg-blue-700"
@@ -60,6 +60,7 @@ const getLocal = (key, fallback) => {
 };
 
 function MainApp() {
+  // --- ALL STATE HOOKS ---
   const [itineraries, setItineraries] = useState({});
   const [selectedTrip, setSelectedTrip] = useState('');
   const [activeTab, setActiveTab] = useState('itinerary'); 
@@ -94,8 +95,8 @@ function MainApp() {
   const [geoCache, setGeoCache] = useState(getLocal('travelGeoCache', {}));
   const [draggingItem, setDraggingItem] = useState(null);
 
+  // --- ALL USE-EFFECT HOOKS ---
   useEffect(() => {
-    // Hard reset URL param backdoor
     if (window.location.search.includes('reset=true')) {
       localStorage.clear();
       window.location.href = '/';
@@ -149,11 +150,7 @@ function MainApp() {
     localStorage.setItem('travelGeoCache', JSON.stringify(geoCache || {}));
   }, [vaultDocs, packingItems, journalEntries, geoCache]);
 
-  if (!selectedTrip && (!itineraries || Object.keys(itineraries).length === 0)) {
-    return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
-  }
-
-  // Bulletproof filtering to remove bad AI generated null objects
+  // --- DATA COMPUTATIONS ---
   let currentTripData = Array.isArray(itineraries?.[selectedTrip]) 
     ? itineraries[selectedTrip].filter(item => item !== null && typeof item === 'object') 
     : [];
@@ -259,7 +256,7 @@ function MainApp() {
 
   const mapItems = itineraryData.map(item => getMapLinkData(item)).filter(Boolean);
 
-  // AUTOMATIC GEOCODING ENGINE
+  // --- GEOCODING USE-EFFECT (MUST BE BEFORE EARLY RETURN) ---
   useEffect(() => {
     if (activeTab !== 'map') return;
     
@@ -292,6 +289,12 @@ function MainApp() {
     return () => { isMounted = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, JSON.stringify(mapItems.map(m => m?.query))]);
+
+  // --- EARLY RETURN FOR LOADING STATE ---
+  // (Safely placed *after* all hooks!)
+  if (!selectedTrip && (!itineraries || Object.keys(itineraries).length === 0)) {
+    return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
+  }
 
   const resolvedMarkers = mapItems.map(item => ({
     ...item,
@@ -403,7 +406,6 @@ function MainApp() {
       totalBudget += val;
       const cat = getCategory(item?.activity);
       categoryTotals[cat] = (categoryTotals[cat] || 0) + val;
-
       const payer = item?.paidBy || 'You';
       memberPaidTotals[payer] = (memberPaidTotals[payer] || 0) + val;
     }
@@ -442,7 +444,7 @@ function MainApp() {
     const encoded = btoa(encodeURIComponent(tripJson));
     const shareUrl = `${window.location.origin}${window.location.pathname}?tripData=${encoded}`;
     navigator.clipboard.writeText(shareUrl);
-    alert('🔗 Shareable link copied!');
+    alert('🔗 Shareable link copied to clipboard!');
   };
 
   const handlePrintPDF = () => {
@@ -451,9 +453,19 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800 pb-24">
+      
+      {/* Hero Cover Image */}
       <div className="relative h-64 md:h-80 w-full bg-slate-900 overflow-hidden print:hidden">
         <img 
-          src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80"
+          src={
+            (selectedTrip || '').toLowerCase().includes('usa') ? "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('prague') ? "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('paris') ? "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('milan') ? "https://images.unsplash.com/photo-1520485647539-516b3226a254?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('venice') ? "https://images.unsplash.com/photo-1514896856981-09c366f7cae2?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('thailand') ? "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=1600&q=80" :
+            "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1600&q=80"
+          } 
           alt="Destination Cover"
           className="w-full h-full object-cover opacity-60"
         />
@@ -465,17 +477,19 @@ function MainApp() {
             </h1>
             <p className="text-gray-200 font-medium tracking-wide flex items-center gap-3 flex-wrap">
               <span>🌍 {itineraryData.length} Activities</span>
-              <button onClick={generateShareLink} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-md">🔗 Share Trip</button>
-              <button onClick={exportCSV} className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-md">📊 Export Excel</button>
-              <button onClick={handlePrintPDF} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md font-bold">🖨️ Print PDF</button>
+              <button onClick={generateShareLink} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-md transition-all">🔗 Share Trip</button>
+              <button onClick={exportCSV} className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-md transition-all">📊 Export Excel</button>
+              <button onClick={handlePrintPDF} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md font-bold transition-all">🖨️ Print PDF</button>
             </p>
           </div>
           <select 
-            className="w-full md:w-auto appearance-none bg-white/20 backdrop-blur-md border border-white/30 text-white py-2 px-4 pr-10 rounded-xl shadow-sm focus:outline-none cursor-pointer font-medium"
+            className="w-full md:w-auto appearance-none bg-white/20 backdrop-blur-md border border-white/30 text-white py-2 px-4 pr-10 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer font-medium"
             value={selectedTrip}
             onChange={(e) => {
               setSelectedTrip(e.target.value);
               setActiveTab('itinerary');
+              setSearchQuery('');
+              setSelectedCategory('All');
             }}
           >
             {Object.keys(itineraries || {}).map(trip => (
@@ -486,42 +500,109 @@ function MainApp() {
       </div>
 
       <main className="max-w-4xl mx-auto px-4 md:px-8 -mt-6 relative z-10">
+        
+        {/* Global Search Bar */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-2 mb-4 flex items-center print:hidden">
+          <span className="pl-4 text-gray-400 text-xl">🔍</span>
+          <input 
+            type="text" 
+            placeholder="Search activities, locations, or notes..." 
+            className="w-full p-3 outline-none text-gray-700 bg-transparent font-medium"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="pr-4 text-gray-400 hover:text-gray-600 font-bold">✕</button>
+          )}
+        </div>
+
+        {/* Category Filter Pills */}
+        {activeTab === 'itinerary' && (
+          <div className="flex gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar print:hidden">
+            {['All', 'Food', 'Transport', 'Hotel', 'Activity', 'Nightlife'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm ${selectedCategory === cat ? 'bg-slate-900 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'}`}
+              >
+                {cat === 'Food' && '🍽️ '}
+                {cat === 'Transport' && '🚗 '}
+                {cat === 'Hotel' && '🏨 '}
+                {cat === 'Activity' && '🌲 '}
+                {cat === 'Nightlife' && '🍸 '}
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Navigation Tabs */}
         <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1 mb-8 overflow-x-auto print:hidden">
-          <button onClick={() => setActiveTab('itinerary')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🗺️ Itinerary</button>
-          <button onClick={() => setActiveTab('ai-generator')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'ai-generator' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-600 hover:bg-purple-50'}`}>✨ AI Generator</button>
-          <button onClick={() => setActiveTab('map')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'map' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📍 Map</button>
-          <button onClick={() => setActiveTab('budget')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>💰 Budget</button>
-          <button onClick={() => setActiveTab('split')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'split' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>⚖️ Split</button>
-          <button onClick={() => setActiveTab('packing')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'packing' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🎒 Packing</button>
-          <button onClick={() => setActiveTab('journal')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'journal' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📸 Journal</button>
-          <button onClick={() => setActiveTab('vault')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'vault' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🔒 Vault</button>
+          <button onClick={() => setActiveTab('itinerary')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🗺️ Itinerary</button>
+          <button onClick={() => setActiveTab('ai-generator')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'ai-generator' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-600 hover:bg-purple-50'}`}>✨ AI Generator</button>
+          <button onClick={() => setActiveTab('map')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'map' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📍 Map</button>
+          <button onClick={() => setActiveTab('budget')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>💰 Budget</button>
+          <button onClick={() => setActiveTab('split')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'split' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>⚖️ Split</button>
+          <button onClick={() => setActiveTab('packing')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'packing' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🎒 Packing</button>
+          <button onClick={() => setActiveTab('journal')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'journal' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📸 Journal</button>
+          <button onClick={() => setActiveTab('vault')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'vault' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🔒 Vault</button>
+          <button onClick={() => setActiveTab('todo')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 flex justify-center items-center gap-1 ${activeTab === 'todo' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📝 To-Dos {todoData.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{todoData.length}</span>}</button>
         </div>
 
         {/* TAB 1: ITINERARY TIMELINE */}
         {activeTab === 'itinerary' && (
           <div className="space-y-10">
+            <p className="text-xs text-gray-400 italic text-center print:hidden">💡 Tip: Drag and drop cards to reorder stops within or across days.</p>
             {Object.keys(groupedItinerary).map((day, dayIndex) => (
               <div key={dayIndex} className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100" onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, day, 0)}>
                 <h3 className="text-2xl font-black text-gray-900 mb-6 flex items-center justify-between">
                   <span className="flex items-center gap-3"><span className="bg-blue-100 text-blue-700 w-10 h-10 rounded-full flex items-center justify-center text-lg">{dayIndex + 1}</span>{day}</span>
+                  <span className="text-xs font-normal text-gray-400 bg-gray-50 px-3 py-1 rounded-full border hidden md:inline-block">Drag cards to reorder</span>
                 </h3>
                 <div className="relative border-l-2 border-gray-200 ml-4 md:ml-5 space-y-6 pl-8 md:pl-10">
                   {groupedItinerary[day].map((item, index) => {
                     const uniqueKey = `${day}-${index}`;
                     const isLongNote = item?.notes && item.notes.length > 100;
+                    const isExpanded = expandedNotes[uniqueKey];
                     const mapData = getMapLinkData(item);
+                    const routeLeg = getRouteLegEstimate(index, groupedItinerary[day]);
+
                     return (
                       <React.Fragment key={index}>
-                        <div draggable onDragStart={(e) => handleDragStart(e, item, day)} className="relative group cursor-grab">
-                          <div className="absolute -left-[45px] md:-left-[54px] top-1 w-10 h-10 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center text-xl shadow-sm z-10">{getIcon(item?.activity)}</div>
-                          <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 group-hover:shadow-md transition-shadow">
-                            <h4 className="text-lg font-bold text-gray-900 leading-tight mb-2">{item?.activity}</h4>
-                            <div className="flex items-center gap-2 flex-wrap mb-2">
-                              {item?.time && <span className="bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full uppercase">{item.time}</span>}
-                              {item?.cost && <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">${item.cost}</span>}
+                        {routeLeg && (
+                          <div className="my-2 py-1.5 px-3 bg-blue-50/80 border border-blue-100 text-blue-700 text-xs font-bold rounded-xl w-fit flex items-center gap-1.5 shadow-sm">
+                            <span>{routeLeg}</span>
+                          </div>
+                        )}
+                        <div draggable onDragStart={(e) => handleDragStart(e, item, day)} className="relative group cursor-grab active:cursor-grabbing">
+                          <div className="absolute -left-[45px] md:-left-[54px] top-1 w-10 h-10 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center text-xl shadow-sm z-10 group-hover:border-blue-500 group-hover:scale-110 transition-transform duration-200">{getIcon(item?.activity)}</div>
+                          <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 group-hover:shadow-md transition-shadow duration-200">
+                            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
+                              <h4 className="text-lg font-bold text-gray-900 leading-tight pr-4">{item?.activity}</h4>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {item?.cost && <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">${item.cost} (Paid by {item.paidBy || 'You'})</span>}
+                                {item?.time && <span className="shrink-0 bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">{item.time}</span>}
+                              </div>
                             </div>
-                            {mapData && <a href={mapData.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100"><span>📍</span> {mapData.label} ↗</a>}
-                            {item?.notes && <p className="mt-3 text-sm text-gray-600 bg-white p-3 rounded-xl border border-gray-100 italic">{item.notes}</p>}
+                            
+                            {item?.photo && (
+                              <div className="mb-3 overflow-hidden rounded-xl h-48 border border-gray-200">
+                                <img src={item.photo} alt={item.activity} className="w-full h-full object-cover" />
+                              </div>
+                            )}
+
+                            {mapData && (
+                              <a href={mapData.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800 mt-2 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 transition-colors">
+                                <span>📍</span> {mapData.label} ↗
+                              </a>
+                            )}
+                            
+                            {item?.notes && (
+                              <div className="mt-3 text-sm text-gray-600 bg-white p-3 rounded-xl border border-gray-100 leading-relaxed">
+                                <p className={!isExpanded && isLongNote ? "line-clamp-2 italic" : "italic"}>{item.notes}</p>
+                                {isLongNote && (<button onClick={() => toggleNote(uniqueKey)} className="text-xs font-bold text-blue-600 hover:underline mt-1 block">{isExpanded ? 'Show less ▲' : 'Read more ▼'}</button>)}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </React.Fragment>
@@ -533,62 +614,154 @@ function MainApp() {
           </div>
         )}
 
-        {/* TAB 1.5: AI TRIP GENERATOR */}
+        {/* TAB 1.5: SECURE SERVERLESS GEMINI AI TRIP GENERATOR */}
         {activeTab === 'ai-generator' && (
-          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-purple-100 text-center">
-            <h3 className="text-3xl font-black text-gray-900 mb-2">Gemini AI Trip Generator</h3>
-            <form onSubmit={handleGenerateAiTrip} className="space-y-4 max-w-xl mx-auto mt-6">
-              <textarea required rows="4" placeholder="e.g. 3 days in Tokyo exploring historic temples and modern districts..." className="w-full p-4 bg-purple-50/50 border border-purple-200 rounded-2xl outline-none" value={aiPrompt} onChange={e => setAiPrompt(e.target.value)}></textarea>
-              <button type="submit" disabled={isGeneratingAi} className="w-full py-4 bg-purple-600 text-white font-bold rounded-2xl shadow-lg">{isGeneratingAi ? 'Generating...' : 'Generate AI Itinerary'}</button>
-            </form>
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-purple-100">
+            <div className="max-w-xl mx-auto py-6">
+              <div className="text-center mb-6">
+                <span className="text-5xl mb-4 block">✨</span>
+                <h3 className="text-3xl font-black text-gray-900 mb-2">Gemini AI Trip Generator</h3>
+                <p className="text-gray-500 text-sm">Enter a vacation prompt below to instantly generate a fully structured live itinerary using secure server-side AI.</p>
+              </div>
+              
+              <form onSubmit={handleGenerateAiTrip} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Vacation Prompt</label>
+                  <textarea rows="4" required placeholder="e.g., 3 days in Tokyo exploring historic temples, authentic ramen shops, and modern electronics districts..." className="w-full p-4 bg-purple-50/50 border border-purple-200 rounded-2xl outline-none focus:border-purple-600 text-gray-800 text-sm" value={aiPrompt} onChange={e => setAiPrompt(e.target.value)}></textarea>
+                </div>
+                <button type="submit" disabled={isGeneratingAi} className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-lg transition-all text-lg flex items-center justify-center gap-2">
+                  {isGeneratingAi ? '✨ Gemini is generating your trip...' : '🚀 Generate Live AI Itinerary'}
+                </button>
+              </form>
+            </div>
           </div>
         )}
 
         {/* TAB 2: NATIVE INTERACTIVE LEAFLET MAP VIEW */}
         {activeTab === 'map' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-            <h3 className="text-2xl font-black text-gray-900 mb-4">Interactive Map Hub</h3>
-            <div className="rounded-2xl overflow-hidden border border-gray-200 h-[500px] w-full bg-slate-100 relative z-0">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">Interactive Map Hub</h3>
+                <p className="text-gray-500 text-sm">Real-time mapped locations automatically extracted from your itinerary.</p>
+              </div>
+              <span className="bg-emerald-100 text-emerald-800 font-bold px-3 py-1 text-xs rounded-full">{resolvedMarkers.length} Locations Pinned</span>
+            </div>
+            
+            <div className="rounded-2xl overflow-hidden border border-gray-200 h-[500px] w-full shadow-inner relative bg-slate-100">
               {resolvedMarkers.length > 0 && resolvedMarkers[0]?.coords ? (
-                <MapContainer center={resolvedMarkers[0].coords} zoom={12} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
-                  <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+                <MapContainer center={resolvedMarkers[0].coords} zoom={12} scrollWheelZoom={true} style={{ height: '100%', width: '100%', zIndex: 0 }}>
+                  <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors' />
                   {resolvedMarkers.map((marker, idx) => (
                     <Marker key={idx} position={marker.coords} icon={customPinIcon}>
-                      <Popup><strong className="text-sm block">{marker.label}</strong><a href={marker.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs font-bold">Directions ↗</a></Popup>
+                      <Popup className="font-sans"><strong className="text-sm block mb-1">{marker.label}</strong><a href={marker.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs font-bold">Get Directions ↗</a></Popup>
                     </Marker>
                   ))}
                   {resolvedMarkers.length > 1 && <Polyline positions={resolvedMarkers.map(m => m.coords)} color="#3b82f6" weight={3} dashArray="5, 10" />}
                 </MapContainer>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400"><p className="font-semibold">Geocoding map locations...</p></div>
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                  <span className="text-4xl mb-2 animate-bounce">📍</span>
+                  <p className="font-semibold">Geocoding map locations...</p>
+                </div>
               )}
             </div>
           </div>
         )}
 
-        {/* TAB 3: BUDGET */}
+        {/* TAB 3: BUDGET BREAKDOWN */}
         {activeTab === 'budget' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">Trip Expense Dashboard</h3>
+            <h3 className="text-2xl font-black text-gray-900 mb-2">Trip Expense Dashboard</h3>
+            <p className="text-gray-500 mb-8 text-sm">Track and analyze expenses across categories for {(selectedTrip || '').replace(/_/g, ' ')}.</p>
+
             <div className="bg-slate-900 text-white rounded-2xl p-6 mb-8 flex justify-between items-center shadow-md">
-              <div><span className="text-slate-400 text-xs uppercase font-bold block mb-1">Total Expenses</span><span className="text-4xl font-black text-emerald-400">${totalBudget.toFixed(2)}</span></div>
+              <div>
+                <span className="text-slate-400 text-xs uppercase tracking-wider font-bold block mb-1">Total Tracked Expenses</span>
+                <span className="text-4xl font-black text-emerald-400">${totalBudget.toFixed(2)}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-slate-400 text-xs uppercase tracking-wider font-bold block mb-1">Items Tracked</span>
+                <span className="text-2xl font-bold">{Object.values(categoryTotals).filter(v => v > 0).length} Categories</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(categoryTotals).map(([cat, amount]) => {
+                const percentage = totalBudget > 0 ? ((amount / totalBudget) * 100).toFixed(0) : 0;
+                return (
+                  <div key={cat} className="p-4 rounded-2xl border border-gray-100 bg-gray-50 flex flex-col justify-between">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-bold text-gray-800 flex items-center gap-2">
+                        {cat === 'Food' && '🍽️'}
+                        {cat === 'Transport' && '🚗'}
+                        {cat === 'Hotel' && '🏨'}
+                        {cat === 'Activity' && '🌲'}
+                        {cat === 'Nightlife' && '🍸'}
+                        {cat === 'Other' && '📌'}
+                        {cat}
+                      </span>
+                      <span className="font-black text-gray-900">${amount.toFixed(2)}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                      <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%` }}></div>
+                    </div>
+                    <span className="text-[10px] text-gray-400 text-right mt-1 font-semibold">{percentage}% of total</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* TAB 4: SPLIT */}
+        {/* TAB 4: EXPENSE SPLITTING LEDGER */}
         {activeTab === 'split' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">Group Expense Splitter</h3>
+            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">⚖️ Group Expense Splitter</h3>
+                <p className="text-gray-500 text-sm mt-1">Automatically calculate who paid what and settle balances evenly.</p>
+              </div>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (newMemberName.trim() && !groupMembers.includes(newMemberName.trim())) {
+                  setGroupMembers([...groupMembers, newMemberName.trim()]);
+                  setNewMemberName('');
+                }
+              }} className="flex gap-2">
+                <input type="text" placeholder="Add traveler..." className="p-2 border border-gray-200 rounded-xl text-sm outline-none" value={newMemberName} onChange={e => setNewMemberName(e.target.value)} />
+                <button type="submit" className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold">Add</button>
+              </form>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 mb-8 flex justify-between items-center">
+              <div>
+                <span className="text-blue-900 text-xs uppercase tracking-wider font-bold block mb-1">Fair Share Per Person ({groupMembers.length} Travelers)</span>
+                <span className="text-3xl font-black text-blue-700">${fairSharePerPerson.toFixed(2)}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-blue-900 text-xs uppercase tracking-wider font-bold block mb-1">Total Trip Spending</span>
+                <span className="text-2xl font-black text-slate-900">${totalBudget.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <h4 className="font-bold text-gray-900 mb-4">Traveler Balances & Debt Settlement</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(groupMembers || []).map((member) => {
+              {groupMembers.map((member) => {
                 const paid = memberPaidTotals[member] || 0;
                 const balance = paid - fairSharePerPerson;
                 return (
                   <div key={member} className="p-5 rounded-2xl border border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <div><span className="font-black text-lg text-gray-900 block">{member}</span></div>
+                    <div>
+                      <span className="font-black text-lg text-gray-900 block">{member}</span>
+                      <span className="text-xs text-gray-500">Paid total: <b>${paid.toFixed(2)}</b></span>
+                    </div>
                     <div className="text-right">
-                      {balance >= 0 ? <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-full">Owed +${balance.toFixed(2)}</span> : <span className="bg-red-100 text-red-800 text-xs font-bold px-3 py-1.5 rounded-full">Owes -${Math.abs(balance).toFixed(2)}</span>}
+                      {balance >= 0 ? (
+                        <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-full inline-block">Is owed +${balance.toFixed(2)}</span>
+                      ) : (
+                        <span className="bg-red-100 text-red-800 text-xs font-bold px-3 py-1.5 rounded-full inline-block">Owes -${Math.abs(balance).toFixed(2)}</span>
+                      )}
                     </div>
                   </div>
                 );
@@ -597,58 +770,239 @@ function MainApp() {
           </div>
         )}
 
-        {/* TAB 5: PACKING */}
+        {/* TAB 5: SMART PACKING CHECKLISTS WITH ASSIGNMENTS */}
         {activeTab === 'packing' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">Group Packing Checklist</h3>
-            <form onSubmit={(e) => { e.preventDefault(); if (newPackingText.trim()) { setPackingItems([...packingItems, { id: Date.now(), text: newPackingText.trim(), assignedTo: newPackingAssignee, packed: false }]); setNewPackingText(''); } }} className="flex gap-2 mb-6">
-              <input type="text" required placeholder="Item name..." className="p-2 border border-gray-200 rounded-xl outline-none flex-1" value={newPackingText} onChange={e => setNewPackingText(e.target.value)} />
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold">Add</button>
-            </form>
-            <div className="space-y-3">
-              {(packingItems || []).map(item => (
-                <div key={item.id} className="p-4 rounded-xl border bg-gray-50 flex justify-between"><span className="font-bold">{item.text}</span><span className="text-xs bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded-full">👤 {item.assignedTo}</span></div>
-              ))}
+            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">🎒 Group Packing Checklist</h3>
+                <p className="text-gray-500 text-sm mt-1">Assign items to specific travelers so everyone knows who is bringing what.</p>
+              </div>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (newPackingText.trim()) {
+                  setPackingItems([...packingItems, { id: Date.now(), text: newPackingText.trim(), assignedTo: newPackingAssignee, packed: false }]);
+                  setNewPackingText('');
+                }
+              }} className="flex gap-2 flex-wrap">
+                <input type="text" required placeholder="Item name (e.g., Rain jacket)..." className="p-2.5 border border-gray-200 rounded-xl text-sm outline-none" value={newPackingText} onChange={e => setNewPackingText(e.target.value)} />
+                <select className="p-2.5 border border-gray-200 rounded-xl text-sm outline-none bg-gray-50 font-semibold" value={newPackingAssignee} onChange={e => setNewPackingAssignee(e.target.value)}>
+                  {groupMembers.map(m => (<option key={m} value={m}>{m}</option>))}
+                </select>
+                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold">Add Item</button>
+              </form>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {packingItems.length > 0 ? (
+                packingItems.map((item) => (
+                  <div key={item.id} className={`p-4 rounded-2xl border flex items-center justify-between transition-all ${item.packed ? 'bg-emerald-50/40 border-emerald-200 opacity-75' : 'bg-gray-50 border-gray-200'}`}>
+                    <label className="flex items-center gap-3 cursor-pointer flex-1">
+                      <input type="checkbox" checked={item.packed} onChange={() => { setPackingItems(packingItems.map(i => i.id === item.id ? { ...i, packed: !i.packed } : i)); }} className="w-5 h-5 rounded text-blue-600 cursor-pointer" />
+                      <span className={`font-bold text-gray-900 ${item.packed ? 'line-through text-gray-400' : ''}`}>{item.text}</span>
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-full">👤 {item.assignedTo}</span>
+                      <button onClick={() => setPackingItems(packingItems.filter(i => i.id !== item.id))} className="text-gray-400 hover:text-red-600 font-bold text-sm">✕</button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 text-center text-gray-400 py-12">No packing items added yet. Use the form above to assign items.</div>
+              )}
             </div>
           </div>
         )}
 
-        {/* TAB 6: JOURNAL */}
+        {/* TAB 6: TRAVEL JOURNAL & PHOTO SCRAPBOOK */}
         {activeTab === 'journal' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-black text-gray-900">Travel Journal</h3>
-              <button onClick={() => setIsJournalModalOpen(true)} className="bg-blue-600 text-white font-bold text-sm px-4 py-2 rounded-xl shadow-md">+ Add Entry</button>
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">📸 Travel Journal & Memories</h3>
+                <p className="text-gray-500 text-sm mt-1">Capture daily photo memories, diary entries, and highlights.</p>
+              </div>
+              <button onClick={() => setIsJournalModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-4 py-2 rounded-xl shadow-md transition-all">+ Add Journal Entry</button>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {(journalEntries || []).map((entry, idx) => (
-                <div key={idx} className="bg-gray-50 border border-gray-200 rounded-3xl p-6"><h4 className="font-black text-xl mb-2">{entry.title}</h4><p className="text-sm text-gray-600">{entry.text}</p></div>
-              ))}
+              {journalEntries.length > 0 ? (
+                journalEntries.map((entry, idx) => (
+                  <div key={idx} className="bg-gray-50 border border-gray-200 rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between">
+                    {entry.photoUrl && (
+                      <div className="h-56 w-full overflow-hidden bg-slate-100 border-b border-gray-200">
+                        <img src={entry.photoUrl} alt={entry.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="p-6 flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-black text-xl text-gray-900">{entry.title}</h4>
+                          <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-full">{entry.date}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 italic leading-relaxed">{entry.text}</p>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                        <button onClick={() => setJournalEntries(journalEntries.filter((_, i) => i !== idx))} className="text-xs text-red-600 font-bold hover:underline">Delete Entry</button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 text-center text-gray-400 py-12">No journal entries yet. Click "+ Add Journal Entry" above to start documenting your trip!</div>
+              )}
             </div>
           </div>
         )}
 
-        {/* TAB 7: VAULT */}
+        {/* TAB 7: SECURE TRAVEL DOCUMENT VAULT */}
         {activeTab === 'vault' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">Secure Document Vault</h3>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">🔒 Secure Document Vault</h3>
+                <p className="text-gray-500 text-sm mt-1">Encrypted storage for passports, booking references, and insurance.</p>
+              </div>
+              {vaultUnlocked && (
+                <button onClick={() => setIsDocModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-4 py-2 rounded-xl shadow-md transition-all">+ Add Document</button>
+              )}
+            </div>
+
             {!vaultUnlocked ? (
-              <div className="text-center py-8"><button onClick={() => setVaultUnlocked(true)} className="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl shadow-md">Unlock Vault</button></div>
+              <div className="max-w-md mx-auto bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center my-8">
+                <span className="text-4xl mb-3 block">🔐</span>
+                <h4 className="font-bold text-gray-900 text-lg mb-2">Vault is Locked</h4>
+                <p className="text-gray-500 text-sm mb-6">Enter your PIN code to access sensitive travel documents offline.</p>
+                
+                {userPin === '' ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-blue-600 font-bold">Set a new 4-digit PIN for your vault:</p>
+                    <input type="password" maxLength="4" placeholder="Enter new PIN" className="w-full text-center tracking-widest text-2xl p-3 bg-white border border-gray-300 rounded-xl outline-none" value={vaultPinInput} onChange={e => setVaultPinInput(e.target.value)} />
+                    <button onClick={() => { if (vaultPinInput.length >= 4) { localStorage.setItem('travelVaultPin', vaultPinInput); setUserPin(vaultPinInput); setVaultUnlocked(true); } else { alert('Please enter at least 4 characters.'); } }} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md">Set PIN & Unlock Vault</button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <input type="password" maxLength="4" placeholder="Enter PIN" className="w-full text-center tracking-widest text-2xl p-3 bg-white border border-gray-300 rounded-xl outline-none" value={vaultPinInput} onChange={e => setVaultPinInput(e.target.value)} />
+                    <button onClick={() => { if (vaultPinInput === userPin) { setVaultUnlocked(true); } else { alert('Incorrect PIN!'); } }} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md">Unlock Vault</button>
+                  </div>
+                )}
+              </div>
             ) : (
-              <div className="space-y-4">
-                <button onClick={() => setIsDocModalOpen(true)} className="mb-4 bg-emerald-600 text-white font-bold text-sm px-4 py-2 rounded-xl">+ Add Document</button>
-                {(vaultDocs || []).map((doc, idx) => (
-                  <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl p-5"><h4 className="font-bold text-lg mb-1">📄 {doc.title}</h4><p className="text-sm font-mono text-blue-600">{doc.refNumber}</p></div>
-                ))}
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {vaultDocs.length > 0 ? (
+                    vaultDocs.map((doc, idx) => (
+                      <div key={idx} className="bg-gray-50 border border-gray-200 rounded-2xl p-5 relative group">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-bold text-gray-900 text-lg">📄 {doc.title}</h4>
+                          <button onClick={() => { const updated = vaultDocs.filter((_, i) => i !== idx); setVaultDocs(updated); }} className="text-gray-400 hover:text-red-600 text-sm font-bold">✕</button>
+                        </div>
+                        <p className="text-sm font-mono bg-white p-2 rounded-lg border border-gray-200 text-blue-600 font-bold mb-2">Ref: {doc.refNumber}</p>
+                        {doc.notes && <p className="text-sm text-gray-600 italic">{doc.notes}</p>}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-2 text-center text-gray-400 py-12">No documents stored in vault yet. Click "+ Add Document" above.</div>
+                  )}
+                </div>
+                <div className="mt-8 text-center">
+                  <button onClick={() => { setVaultUnlocked(false); setVaultPinInput(''); }} className="text-xs text-red-600 font-bold hover:underline">Lock Vault Now</button>
+                </div>
               </div>
             )}
           </div>
         )}
 
+        {/* TAB 8: TO-DO LIST */}
+        {activeTab === 'todo' && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+            <h3 className="text-2xl font-black text-gray-900 mb-6">Pre-Trip Checklist</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {todoData.map((item, index) => (
+                <label key={index} className="flex items-start gap-4 p-4 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                  <input type="checkbox" className="w-5 h-5 mt-0.5 rounded text-blue-600" />
+                  <div>
+                    <span className="font-bold text-gray-900 block">{item?.activity}</span>
+                    {item?.location && <span className="text-sm text-blue-600 font-medium block mt-1">{item.location}</span>}
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Floating Add Activity Button */}
-      <button onClick={() => setIsModalOpen(true)} className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl text-3xl font-light z-40">+</button>
+      <button onClick={() => setIsModalOpen(true)} className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl hover:bg-blue-700 hover:scale-105 transition-all duration-200 flex items-center justify-center text-3xl font-light z-40 print:hidden">+</button>
+
+      {/* Modals */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-black text-gray-900">Add New Activity</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-800 text-2xl font-bold">✕</button>
+            </div>
+            <form onSubmit={handleAddActivity} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">Day/Date *</label><input required type="text" placeholder="e.g. Day 1" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.day} onChange={e => setNewActivity({...newActivity, day: e.target.value})} /></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">Time</label><input type="text" placeholder="e.g. 10:00 AM" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} /></div>
+              </div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-1">Activity *</label><input required type="text" placeholder="e.g. Walmart" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.activity} onChange={e => setNewActivity({...newActivity, activity: e.target.value})} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">Location</label><input type="text" placeholder="e.g. Los Angeles, CA" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} /></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">Cost ($)</label><input type="number" placeholder="e.g. 45" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.cost} onChange={e => setNewActivity({...newActivity, cost: e.target.value})} /></div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Paid By</label>
+                <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.paidBy} onChange={e => setNewActivity({...newActivity, paidBy: e.target.value})}>
+                  {groupMembers.map(m => (<option key={m} value={m}>{m}</option>))}
+                </select>
+              </div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-1">Photo Image URL (Optional)</label><input type="url" placeholder="https://images.unsplash.com/..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.photo} onChange={e => setNewActivity({...newActivity, photo: e.target.value})} /></div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-1">Notes</label><textarea rows="2" placeholder="Booking references..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.notes} onChange={e => setNewActivity({...newActivity, notes: e.target.value})}></textarea></div>
+              <button type="submit" className="w-full py-4 mt-2 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg hover:bg-blue-700 transition-colors">Save to Itinerary</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isJournalModalOpen && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-gray-900">Add Journal Entry</h2>
+              <button onClick={() => setIsJournalModalOpen(false)} className="text-gray-400 hover:text-gray-800 text-2xl font-bold">✕</button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); setJournalEntries([...journalEntries, newJournal]); setNewJournal({ title: '', photoUrl: '', date: '', text: '' }); setIsJournalModalOpen(false); }} className="space-y-4">
+              <div><label className="block text-sm font-bold text-gray-700 mb-1">Title *</label><input required type="text" placeholder="e.g. Sunset at Griffith Observatory" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newJournal.title} onChange={e => setNewJournal({...newJournal, title: e.target.value})} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">Date *</label><input required type="text" placeholder="e.g. Day 2" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newJournal.date} onChange={e => setNewJournal({...newJournal, date: e.target.value})} /></div>
+                <div><label className="block text-sm font-bold text-gray-700 mb-1">Photo URL *</label><input required type="url" placeholder="https://..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newJournal.photoUrl} onChange={e => setNewJournal({...newJournal, photoUrl: e.target.value})} /></div>
+              </div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-1">Story / Memories *</label><textarea required rows="3" placeholder="Write about your experience..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newJournal.text} onChange={e => setNewJournal({...newJournal, text: e.target.value})}></textarea></div>
+              <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">Save Entry</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isDocModalOpen && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-gray-900">Add Secure Document</h2>
+              <button onClick={() => setIsDocModalOpen(false)} className="text-gray-400 hover:text-gray-800 text-2xl font-bold">✕</button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); setVaultDocs([...vaultDocs, newDoc]); setNewDoc({ title: '', refNumber: '', notes: '' }); setIsDocModalOpen(false); }} className="space-y-4">
+              <div><label className="block text-sm font-bold text-gray-700 mb-1">Document Title *</label><input required type="text" placeholder="e.g. Flight Booking / Passport" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newDoc.title} onChange={e => setNewDoc({...newDoc, title: e.target.value})} /></div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-1">Reference Number / Code *</label><input type="text" placeholder="e.g. AB123456" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none font-mono" value={newDoc.refNumber} onChange={e => setNewDoc({...newDoc, refNumber: e.target.value})} /></div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-1">Secure Notes</label><textarea rows="2" placeholder="Important details or PINs..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newDoc.notes} onChange={e => setNewDoc({...newDoc, notes: e.target.value})}></textarea></div>
+              <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">Save to Vault</button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
