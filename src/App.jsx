@@ -23,7 +23,6 @@ export default function App() {
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
 
   useEffect(() => {
-    // Check if URL has a shared trip encoded in parameters
     const params = new URLSearchParams(window.location.search);
     const sharedTripData = params.get('tripData');
 
@@ -114,12 +113,20 @@ export default function App() {
     return '📌';
   };
 
-  // SMART LOCATION PARSER: Cleans messy activity text to find real map locations & links
+  // SMART LOCATION PARSER: Isolates destinations from routes like "Hotel to Walmart"
   const getSmartLocation = (item) => {
-    if (item.location && item.location.trim() !== '') return item.location;
+    if (item.location && item.location.trim() !== '' && !item.location.toLowerCase().includes('drive')) {
+      return item.location;
+    }
     let text = item.activity || '';
-    // Strip common filler prefixes
+    if (text.toLowerCase().includes(' to ')) {
+      const parts = text.split(/ to /i);
+      text = parts[parts.length - 1];
+    }
     text = text.replace(/^(drive to|stay at|visit|dinner at|lunch at|breakfast at|flight to|arrive at|check in at|stop at)\s+/i, '');
+    if (text.toLowerCase() === 'hotel' || text.toLowerCase() === 'motel') {
+      return `${selectedTrip.replace(/_/g, ' ')} hotel`;
+    }
     return text;
   };
 
@@ -148,26 +155,40 @@ export default function App() {
     }
   });
 
-  const exportData = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(itineraries, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `${selectedTrip}_backup.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+  // CSV/Excel Table Export
+  const exportCSV = () => {
+    const data = itineraries[selectedTrip] || [];
+    let csvContent = "data:text/csv;charset=utf-8,Day,Time,Activity,Location,Cost,Notes\n";
+    
+    data.forEach(item => {
+      const row = [
+        `"${(item.day || '').replace(/"/g, '""')}"`,
+        `"${(item.time || '').replace(/"/g, '""')}"`,
+        `"${(item.activity || '').replace(/"/g, '""')}"`,
+        `"${(item.location || '').replace(/"/g, '""')}"`,
+        `"${(item.cost || '').replace(/"/g, '""')}"`,
+        `"${(item.notes || '').replace(/"/g, '""')}"`
+      ];
+      csvContent += row.join(",") + "\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${selectedTrip}_itinerary.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
-  // Shareable Trip Link Generator
   const generateShareLink = () => {
     const tripJson = JSON.stringify({ [selectedTrip]: itineraries[selectedTrip] });
     const encoded = btoa(encodeURIComponent(tripJson));
     const shareUrl = `${window.location.origin}${window.location.pathname}?tripData=${encoded}`;
     navigator.clipboard.writeText(shareUrl);
-    alert('🔗 Shareable trip link copied to clipboard! Anyone with this link can view and explore this itinerary.');
+    alert('🔗 Shareable trip link copied to clipboard!');
   };
 
-  // One-Tap PDF / Print Handler
   const handlePrintPDF = () => {
     window.print();
   };
@@ -205,11 +226,11 @@ export default function App() {
               <button onClick={generateShareLink} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-full font-bold transition-all shadow-md">
                 🔗 Share Trip Link
               </button>
+              <button onClick={exportCSV} className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold transition-all shadow-md">
+                📊 Export Excel / CSV
+              </button>
               <button onClick={handlePrintPDF} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md transition-all font-bold">
                 🖨️ Export PDF
-              </button>
-              <button onClick={exportData} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md transition-all">
-                📥 JSON Backup
               </button>
             </p>
           </div>
@@ -335,14 +356,12 @@ export default function App() {
                             </div>
                           </div>
                           
-                          {/* Photo Pinning */}
                           {item.photo && (
                             <div className="mb-3 overflow-hidden rounded-xl h-48 border border-gray-200">
                               <img src={item.photo} alt={item.activity} className="w-full h-full object-cover" />
                             </div>
                           )}
 
-                          {/* Smart Map / Location Link */}
                           {smartLoc && (
                             <a 
                               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(smartLoc)}`} 
