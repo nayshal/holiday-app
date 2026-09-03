@@ -8,8 +8,9 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedNotes, setExpandedNotes] = useState({});
   
-  // AI Trip Generator state
+  // AI Trip Generator states
   const [aiPrompt, setAiPrompt] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState(localStorage.getItem('geminiApiKey') || '');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
   // Modal states
@@ -75,6 +76,10 @@ export default function App() {
     localStorage.setItem('travelVaultDocs', JSON.stringify(vaultDocs));
   }, [vaultDocs]);
 
+  useEffect(() => {
+    localStorage.setItem('geminiApiKey', geminiApiKey);
+  }, [geminiApiKey]);
+
   if (!selectedTrip && Object.keys(itineraries).length === 0) {
     return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
   }
@@ -126,7 +131,6 @@ export default function App() {
     return '📌';
   };
 
-  // Find Hotel Address dynamically for smart routing
   const findHotelAddress = () => {
     const hotelItem = currentTripData.find(item => getCategory(item.activity) === 'Hotel' || item.activity.toLowerCase().includes('hotel') || item.activity.toLowerCase().includes('motel'));
     if (hotelItem) {
@@ -136,7 +140,6 @@ export default function App() {
     return `${selectedTrip.replace(/_/g, ' ')} hotel`;
   };
 
-  // ULTIMATE SMART GEOCODING RESOLVER: Finds closest Walmart, Target, Hotel, etc. and attaches city context
   const getMapLinkData = (item) => {
     const rawLoc = item.location && item.location.trim() !== '' && !item.location.toLowerCase().includes('drive') 
       ? item.location 
@@ -151,20 +154,14 @@ export default function App() {
     const tripCity = selectedTrip.replace(/_/g, ' ');
     const hotelAddress = findHotelAddress();
 
-    // Handle Route strings like "Hotel to Walmart"
     if (rawLoc.toLowerCase().includes(' to ')) {
       const parts = rawLoc.split(/ to /i);
       let origin = parts[0].replace(/^(drive to|stay at|visit)\s+/i, '').trim();
       let dest = parts[parts.length - 1].trim();
 
-      if (origin.toLowerCase() === 'hotel' || origin.toLowerCase() === 'motel' || origin.toLowerCase() === 'the hotel') {
-        origin = hotelAddress;
-      }
-      if (dest.toLowerCase() === 'hotel' || dest.toLowerCase() === 'motel' || dest.toLowerCase() === 'the hotel') {
-        dest = hotelAddress;
-      }
+      if (origin.toLowerCase() === 'hotel' || origin.toLowerCase() === 'motel' || origin.toLowerCase() === 'the hotel') origin = hotelAddress;
+      if (dest.toLowerCase() === 'hotel' || dest.toLowerCase() === 'motel' || dest.toLowerCase() === 'the hotel') dest = hotelAddress;
 
-      // Smart brand expansion
       if (origin.toLowerCase().includes('walmart')) origin = `Walmart Supercenter, ${tripCity}`;
       if (dest.toLowerCase().includes('walmart')) dest = `Walmart Supercenter, ${tripCity}`;
       if (origin.toLowerCase().includes('target')) origin = `Target, ${tripCity}`;
@@ -182,9 +179,7 @@ export default function App() {
     }
 
     let cleanQuery = rawLoc.replace(/^(drive to|stay at|visit|dinner at|lunch at|breakfast at|flight to|arrive at|check in at|stop at)\s+/i, '').trim();
-    if (cleanQuery.toLowerCase() === 'hotel' || cleanQuery.toLowerCase() === 'motel') {
-      cleanQuery = hotelAddress;
-    }
+    if (cleanQuery.toLowerCase() === 'hotel' || cleanQuery.toLowerCase() === 'motel') cleanQuery = hotelAddress;
 
     if (cleanQuery.toLowerCase().includes('walmart')) cleanQuery = `Walmart Supercenter, ${tripCity}`;
     if (cleanQuery.toLowerCase().includes('target')) cleanQuery = `Target, ${tripCity}`;
@@ -225,33 +220,61 @@ export default function App() {
     setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '', paidBy: 'You' });
   };
 
-  // Feature #1: AI Trip Generator Function
-  const handleGenerateAiTrip = (e) => {
+  // REAL GEMINI AI TRIP GENERATOR API CALL
+  const handleGenerateAiTrip = async (e) => {
     e.preventDefault();
     if (!aiPrompt.trim()) return;
+    if (!geminiApiKey.trim()) {
+      alert('Please enter your Gemini API key first!');
+      return;
+    }
+
     setIsGeneratingAi(true);
 
-    setTimeout(() => {
-      const tripName = aiPrompt.split(' ').slice(0, 3).join('_').replace(/[^a-zA-Z0-9_]/g, '') || 'AI_Custom_Trip';
+    const systemPrompt = `You are an expert travel planner. Create a detailed travel itinerary for the prompt: "${aiPrompt}". 
+    Return ONLY a valid JSON array of objects. Do not include markdown code blocks like \`\`\`json, just return the raw JSON array string.
+    Each object must have these exact keys:
+    - "day": string (e.g., "Day 1", "Day 2", "To Do")
+    - "time": string (e.g., "09:00 AM")
+    - "activity": string (e.g., "Visit Eiffel Tower")
+    - "location": string (e.g., "Eiffel Tower, Paris")
+    - "cost": string (e.g., "30" or "0")
+    - "paidBy": string ("You")
+    - "notes": string (short tips or booking info)`;
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: systemPrompt }] }]
+        })
+      });
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error.message || 'Gemini API Error');
+      }
+
+      const textResponse = data.candidates[0].content.parts[0].text;
+      // Clean potential markdown blocks if present
+      const cleanedJsonStr = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsedItinerary = JSON.parse(cleanedJsonStr);
+
+      const tripName = aiPrompt.split(' ').slice(0, 3).join('_').replace(/[^a-zA-Z0-9_]/g, '') || 'AI_Trip';
       const formattedTripName = tripName.charAt(0).toUpperCase() + tripName.slice(1);
 
-      const generatedItinerary = [
-        { day: 'Day 1', time: '09:00 AM', activity: 'Arrive and check in at Central Hotel', location: 'Central Hotel', cost: '150', paidBy: 'You', notes: 'Booked via app. Early check-in requested.' },
-        { day: 'Day 1', time: '12:30 PM', activity: 'Lunch at local cafe', location: 'Downtown Cafe', cost: '35', paidBy: 'Partner', notes: 'Try local specialty dishes.' },
-        { day: 'Day 1', time: '03:00 PM', activity: 'Walking tour of historic city center', location: 'City Square', cost: '0', paidBy: 'You', notes: 'Meet guide at main fountain.' },
-        { day: 'Day 2', time: '10:00 AM', activity: 'Visit main landmark and museum', location: 'National Museum', cost: '25', paidBy: 'You', notes: 'Pre-booked skip-the-line tickets.' },
-        { day: 'Day 2', time: '01:00 PM', activity: 'Grocery run at Walmart for road trip snacks', location: 'Walmart', cost: '45', paidBy: 'Partner', notes: 'Stock up on water and protein bars.' },
-        { day: 'Day 2', time: '07:00 PM', activity: 'Dinner at rooftop bar and nice restaurant', location: 'Skyline Bistro', cost: '90', paidBy: 'You', notes: 'Stunning sunset views.' },
-        { day: 'To Do', time: 'Anytime', activity: 'Book travel insurance and download offline maps', location: '', cost: '50', paidBy: 'You', notes: 'Critical before departure.' }
-      ];
-
-      const updated = { ...itineraries, [formattedTripName]: generatedItinerary };
+      const updated = { ...itineraries, [formattedTripName]: parsedItinerary };
       setItineraries(updated);
       setSelectedTrip(formattedTripName);
       setActiveTab('itinerary');
       setAiPrompt('');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate AI trip. Please check your Gemini API key and try again.');
+    } finally {
       setIsGeneratingAi(false);
-    }, 1000);
+    }
   };
 
   const handleDragStart = (e, item, day) => {
@@ -582,29 +605,48 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 1.5: AI TRIP GENERATOR */}
+        {/* TAB 1.5: REAL GEMINI AI TRIP GENERATOR */}
         {activeTab === 'ai-generator' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-purple-100">
-            <div className="text-center max-w-lg mx-auto py-6">
-              <span className="text-5xl mb-4 block">✨</span>
-              <h3 className="text-3xl font-black text-gray-900 mb-2">AI Trip Generator</h3>
-              <p className="text-gray-500 text-sm mb-6">Describe your dream vacation, and our AI will instantly build a complete day-by-day itinerary with hotels, food spots, and smart routes.</p>
+            <div className="max-w-xl mx-auto py-6">
+              <div className="text-center mb-6">
+                <span className="text-5xl mb-4 block">✨</span>
+                <h3 className="text-3xl font-black text-gray-900 mb-2">Gemini AI Trip Generator</h3>
+                <p className="text-gray-500 text-sm">Enter your Gemini API key and prompt to instantly generate a fully structured live itinerary.</p>
+              </div>
               
               <form onSubmit={handleGenerateAiTrip} className="space-y-4">
-                <textarea 
-                  rows="3" 
-                  required
-                  placeholder="e.g., 3 days in Tokyo exploring temples, ramen shops, and modern neighborhoods..." 
-                  className="w-full p-4 bg-purple-50/50 border border-purple-200 rounded-2xl outline-none focus:border-purple-600 text-gray-800 text-sm"
-                  value={aiPrompt}
-                  onChange={e => setAiPrompt(e.target.value)}
-                ></textarea>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Gemini API Key</label>
+                  <input 
+                    type="password" 
+                    required
+                    placeholder="AIzaSy..." 
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-purple-600 text-sm font-mono"
+                    value={geminiApiKey}
+                    onChange={e => setGeminiApiKey(e.target.value)}
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">Your key is stored securely in your browser's local storage.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Vacation Prompt</label>
+                  <textarea 
+                    rows="3" 
+                    required
+                    placeholder="e.g., 3 days in Tokyo exploring historic temples, authentic ramen shops, and modern electronics districts..." 
+                    className="w-full p-4 bg-purple-50/50 border border-purple-200 rounded-2xl outline-none focus:border-purple-600 text-gray-800 text-sm"
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                  ></textarea>
+                </div>
+
                 <button 
                   type="submit" 
                   disabled={isGeneratingAi}
                   className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-lg transition-all text-lg flex items-center justify-center gap-2"
                 >
-                  {isGeneratingAi ? '✨ Crafting Your Itinerary...' : '🚀 Generate Custom AI Itinerary'}
+                  {isGeneratingAi ? '✨ Gemini is generating your trip...' : '🚀 Generate Live AI Itinerary'}
                 </button>
               </form>
             </div>
