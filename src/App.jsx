@@ -3,14 +3,24 @@ import React, { useState, useEffect } from 'react';
 export default function App() {
   const [itineraries, setItineraries] = useState({});
   const [selectedTrip, setSelectedTrip] = useState('');
-  const [activeTab, setActiveTab] = useState('itinerary');
+  const [activeTab, setActiveTab] = useState('itinerary'); // 'itinerary', 'map', 'vault', 'budget', 'todo'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedNotes, setExpandedNotes] = useState({});
+  
+  // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newActivity, setNewActivity] = useState({
-    day: '', time: '', activity: '', location: '', notes: '', cost: ''
+    day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: ''
   });
+
+  // Vault states
+  const [vaultUnlocked, setVaultUnlocked] = useState(false);
+  const [vaultPinInput, setVaultPinInput] = useState('');
+  const [userPin, setUserPin] = useState(localStorage.getItem('travelVaultPin') || '');
+  const [vaultDocs, setVaultDocs] = useState(JSON.parse(localStorage.getItem('travelVaultDocs') || '[]'));
+  const [newDoc, setNewDoc] = useState({ title: '', refNumber: '', notes: '' });
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem('myTravelData');
@@ -34,6 +44,10 @@ export default function App() {
       localStorage.setItem('myTravelData', JSON.stringify(itineraries));
     }
   }, [itineraries]);
+
+  useEffect(() => {
+    localStorage.setItem('travelVaultDocs', JSON.stringify(vaultDocs));
+  }, [vaultDocs]);
 
   if (!selectedTrip) return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
 
@@ -94,10 +108,10 @@ export default function App() {
     updatedTrips[selectedTrip] = [...updatedTrips[selectedTrip], newActivity];
     setItineraries(updatedTrips);
     setIsModalOpen(false);
-    setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '' });
+    setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '' });
   };
 
-  // Budget calculations by category
+  // Budget calculations
   const categoryTotals = { Food: 0, Transport: 0, Hotel: 0, Activity: 0, Nightlife: 0, Other: 0 };
   let totalBudget = 0;
   (itineraries[selectedTrip] || []).forEach(item => {
@@ -109,7 +123,6 @@ export default function App() {
     }
   });
 
-  // Export Data Handler
   const exportData = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(itineraries, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -119,6 +132,10 @@ export default function App() {
     downloadAnchor.click();
     downloadAnchor.remove();
   };
+
+  // Extract unique locations for Map view
+  const mapLocations = itineraryData.filter(item => item.location).map(item => item.location);
+  const primaryMapLocation = mapLocations.length > 0 ? mapLocations[0] : selectedTrip.replace(/_/g, ' ');
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800 pb-24">
@@ -189,7 +206,7 @@ export default function App() {
           )}
         </div>
 
-        {/* Category Filter Pills (Only visible on itinerary tab) */}
+        {/* Category Filter Pills */}
         {activeTab === 'itinerary' && (
           <div className="flex gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar">
             {['All', 'Food', 'Transport', 'Hotel', 'Activity', 'Nightlife'].map((cat) => (
@@ -210,22 +227,34 @@ export default function App() {
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1 mb-8">
+        <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1 mb-8 overflow-x-auto">
           <button 
             onClick={() => setActiveTab('itinerary')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
             🗺️ Itinerary
           </button>
           <button 
-            onClick={() => setActiveTab('budget')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+            onClick={() => setActiveTab('map')}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'map' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
-            💰 Budget Breakdown
+            📍 Map View
+          </button>
+          <button 
+            onClick={() => setActiveTab('budget')}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            💰 Budget
+          </button>
+          <button 
+            onClick={() => setActiveTab('vault')}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'vault' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            🔒 Vault
           </button>
           <button 
             onClick={() => setActiveTab('todo')}
-            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 flex justify-center items-center gap-2 ${activeTab === 'todo' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 flex justify-center items-center gap-1 ${activeTab === 'todo' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
             📝 To-Dos
             {todoData.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{todoData.length}</span>}
@@ -261,6 +290,13 @@ export default function App() {
                             </div>
                           </div>
                           
+                          {/* Photo Pinning Display */}
+                          {item.photo && (
+                            <div className="mb-3 overflow-hidden rounded-xl h-48 border border-gray-200">
+                              <img src={item.photo} alt={item.activity} className="w-full h-full object-cover" />
+                            </div>
+                          )}
+
                           {item.location && (
                             <a 
                               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}`} 
@@ -297,7 +333,47 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: BUDGET BREAKDOWN */}
+        {/* TAB 2: INTERACTIVE MAP VIEW */}
+        {activeTab === 'map' && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+            <h3 className="text-2xl font-black text-gray-900 mb-2">Route & Destination Map</h3>
+            <p className="text-gray-500 mb-6 text-sm">Interactive routing and pins for {selectedTrip.replace(/_/g, ' ')}.</p>
+            
+            <div className="rounded-2xl overflow-hidden border border-gray-200 h-[450px] w-full shadow-inner relative bg-slate-100">
+              <iframe
+                title="Trip Route Map"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(primaryMapLocation)}&t=&z=11&ie=UTF8&iwloc=&output=embed`}
+              ></iframe>
+            </div>
+
+            <div className="mt-6">
+              <h4 className="font-bold text-gray-900 mb-3">Pinned Stops on this Trip:</h4>
+              <div className="flex flex-wrap gap-2">
+                {mapLocations.length > 0 ? (
+                  mapLocations.map((loc, idx) => (
+                    <a 
+                      key={idx} 
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-gray-100 hover:bg-blue-50 border border-gray-200 hover:border-blue-200 text-gray-700 hover:text-blue-600 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5"
+                    >
+                      <span>📍</span> {loc}
+                    </a>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No specific location pins found in this itinerary.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: BUDGET BREAKDOWN */}
         {activeTab === 'budget' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
             <h3 className="text-2xl font-black text-gray-900 mb-2">Trip Expense Dashboard</h3>
@@ -342,7 +418,123 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: TO-DO LIST */}
+        {/* TAB 4: SECURE TRAVEL DOCUMENT VAULT */}
+        {activeTab === 'vault' && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">🔒 Secure Document Vault</h3>
+                <p className="text-gray-500 text-sm mt-1">Encrypted storage for passports, booking references, and insurance.</p>
+              </div>
+              {vaultUnlocked && (
+                <button 
+                  onClick={() => setIsDocModalOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-4 py-2 rounded-xl shadow-md transition-all"
+                >
+                  + Add Document
+                </button>
+              )}
+            </div>
+
+            {!vaultUnlocked ? (
+              <div className="max-w-md mx-auto bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center my-8">
+                <span className="text-4xl mb-3 block">🔐</span>
+                <h4 className="font-bold text-gray-900 text-lg mb-2">Vault is Locked</h4>
+                <p className="text-gray-500 text-sm mb-6">Enter your PIN code to access sensitive travel documents offline.</p>
+                
+                {userPin === '' ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-blue-600 font-bold">Set a new 4-digit PIN for your vault:</p>
+                    <input 
+                      type="password" 
+                      maxLength="4" 
+                      placeholder="Enter new PIN" 
+                      className="w-full text-center tracking-widest text-2xl p-3 bg-white border border-gray-300 rounded-xl outline-none"
+                      value={vaultPinInput}
+                      onChange={e => setVaultPinInput(e.target.value)}
+                    />
+                    <button 
+                      onClick={() => {
+                        if (vaultPinInput.length >= 4) {
+                          localStorage.setItem('travelVaultPin', vaultPinInput);
+                          setUserPin(vaultPinInput);
+                          setVaultUnlocked(true);
+                        } else {
+                          alert('Please enter at least 4 characters.');
+                        }
+                      }}
+                      className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md"
+                    >
+                      Set PIN & Unlock Vault
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <input 
+                      type="password" 
+                      maxLength="4" 
+                      placeholder="Enter PIN" 
+                      className="w-full text-center tracking-widest text-2xl p-3 bg-white border border-gray-300 rounded-xl outline-none"
+                      value={vaultPinInput}
+                      onChange={e => setVaultPinInput(e.target.value)}
+                    />
+                    <button 
+                      onClick={() => {
+                        if (vaultPinInput === userPin) {
+                          setVaultUnlocked(true);
+                        } else {
+                          alert('Incorrect PIN!');
+                        }
+                      }}
+                      className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md"
+                    >
+                      Unlock Vault
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {vaultDocs.length > 0 ? (
+                    vaultDocs.map((doc, idx) => (
+                      <div key={idx} className="bg-gray-50 border border-gray-200 rounded-2xl p-5 relative group">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-bold text-gray-900 text-lg">📄 {doc.title}</h4>
+                          <button 
+                            onClick={() => {
+                              const updated = vaultDocs.filter((_, i) => i !== idx);
+                              setVaultDocs(updated);
+                            }}
+                            className="text-gray-400 hover:text-red-600 text-sm font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <p className="text-sm font-mono bg-white p-2 rounded-lg border border-gray-200 text-blue-600 font-bold mb-2">
+                          Ref: {doc.refNumber}
+                        </p>
+                        {doc.notes && <p className="text-sm text-gray-600 italic">{doc.notes}</p>}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-2 text-center text-gray-400 py-12">No documents stored in vault yet. Click "+ Add Document" above.</div>
+                  )}
+                </div>
+                <div className="mt-8 text-center">
+                  <button 
+                    onClick={() => { setVaultUnlocked(false); setVaultPinInput(''); }}
+                    className="text-xs text-red-600 font-bold hover:underline"
+                  >
+                    Lock Vault Now
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 5: TO-DO LIST */}
         {activeTab === 'todo' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
             <h3 className="text-2xl font-black text-gray-900 mb-6">Pre-Trip Checklist</h3>
@@ -372,7 +564,7 @@ export default function App() {
       {/* Add Activity Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl">
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-black text-gray-900">Add New Activity</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-800 text-2xl font-bold">✕</button>
@@ -407,6 +599,11 @@ export default function App() {
               </div>
 
               <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Photo Image URL (Optional)</label>
+                <input type="url" placeholder="https://images.unsplash.com/..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.photo} onChange={e => setNewActivity({...newActivity, photo: e.target.value})} />
+              </div>
+
+              <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Notes</label>
                 <textarea rows="2" placeholder="Booking references or reminders..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.notes} onChange={e => setNewActivity({...newActivity, notes: e.target.value})}></textarea>
               </div>
@@ -414,6 +611,39 @@ export default function App() {
               <button type="submit" className="w-full py-4 mt-2 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg hover:bg-blue-700 transition-colors">
                 Save to Itinerary
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Document Modal */}
+      {isDocModalOpen && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-gray-900">Add Secure Document</h2>
+              <button onClick={() => setIsDocModalOpen(false)} className="text-gray-400 hover:text-gray-800 text-2xl font-bold">✕</button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setVaultDocs([...vaultDocs, newDoc]);
+              setNewDoc({ title: '', refNumber: '', notes: '' });
+              setIsDocModalOpen(false);
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Document Title *</label>
+                <input required type="text" placeholder="e.g. Flight Booking / Passport" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newDoc.title} onChange={e => setNewDoc({...newDoc, title: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Reference Number / Code *</label>
+                <input required type="text" placeholder="e.g. AB123456" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none font-mono" value={newDoc.refNumber} onChange={e => setNewDoc({...newDoc, refNumber: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Secure Notes</label>
+                <textarea rows="2" placeholder="Important details or PINs..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newDoc.notes} onChange={e => setNewDoc({...newDoc, notes: e.target.value})}></textarea>
+              </div>
+              <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">Save to Vault</button>
             </form>
           </div>
         </div>
