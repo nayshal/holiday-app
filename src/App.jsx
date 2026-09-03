@@ -97,10 +97,28 @@ export default function App() {
     setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '' });
   };
 
-  const totalBudget = currentTripData.reduce((acc, item) => {
+  // Budget calculations by category
+  const categoryTotals = { Food: 0, Transport: 0, Hotel: 0, Activity: 0, Nightlife: 0, Other: 0 };
+  let totalBudget = 0;
+  (itineraries[selectedTrip] || []).forEach(item => {
     const val = parseFloat(item.cost || 0);
-    return acc + (isNaN(val) ? 0 : val);
-  }, 0);
+    if (!isNaN(val) && val > 0) {
+      totalBudget += val;
+      const cat = getCategory(item.activity);
+      categoryTotals[cat] = (categoryTotals[cat] || 0) + val;
+    }
+  });
+
+  // Export Data Handler
+  const exportData = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(itineraries, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `${selectedTrip}_backup.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800 pb-24">
@@ -127,9 +145,11 @@ export default function App() {
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-md mb-2 capitalize">
               {selectedTrip.replace(/_/g, ' ')}
             </h1>
-            <p className="text-gray-200 font-medium tracking-wide flex items-center gap-3">
+            <p className="text-gray-200 font-medium tracking-wide flex items-center gap-3 flex-wrap">
               <span>🌍 {itineraryData.length} Activities</span>
-              {totalBudget > 0 && <span className="bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 px-2.5 py-0.5 rounded-full text-xs">Total Tracked: ${totalBudget.toFixed(2)}</span>}
+              <button onClick={exportData} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md transition-all">
+                📥 Export Backup
+              </button>
             </p>
           </div>
           
@@ -169,23 +189,25 @@ export default function App() {
           )}
         </div>
 
-        {/* Category Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar">
-          {['All', 'Food', 'Transport', 'Hotel', 'Activity', 'Nightlife'].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm ${selectedCategory === cat ? 'bg-slate-900 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'}`}
-            >
-              {cat === 'Food' && '🍽️ '}
-              {cat === 'Transport' && '🚗 '}
-              {cat === 'Hotel' && '🏨 '}
-              {cat === 'Activity' && '🌲 '}
-              {cat === 'Nightlife' && '🍸 '}
-              {cat}
-            </button>
-          ))}
-        </div>
+        {/* Category Filter Pills (Only visible on itinerary tab) */}
+        {activeTab === 'itinerary' && (
+          <div className="flex gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar">
+            {['All', 'Food', 'Transport', 'Hotel', 'Activity', 'Nightlife'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm ${selectedCategory === cat ? 'bg-slate-900 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'}`}
+              >
+                {cat === 'Food' && '🍽️ '}
+                {cat === 'Transport' && '🚗 '}
+                {cat === 'Hotel' && '🏨 '}
+                {cat === 'Activity' && '🌲 '}
+                {cat === 'Nightlife' && '🍸 '}
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Navigation Tabs */}
         <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1 mb-8">
@@ -193,18 +215,24 @@ export default function App() {
             onClick={() => setActiveTab('itinerary')}
             className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
-            🗺️ Route & Itinerary
+            🗺️ Itinerary
+          </button>
+          <button 
+            onClick={() => setActiveTab('budget')}
+            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            💰 Budget Breakdown
           </button>
           <button 
             onClick={() => setActiveTab('todo')}
             className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 flex justify-center items-center gap-2 ${activeTab === 'todo' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
-            📝 Planning & To-Dos
+            📝 To-Dos
             {todoData.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{todoData.length}</span>}
           </button>
         </div>
 
-        {/* ITINERARY TIMELINE */}
+        {/* TAB 1: ITINERARY TIMELINE */}
         {activeTab === 'itinerary' && (
           <div className="space-y-10">
             {Object.keys(groupedItinerary).map((day, dayIndex) => (
@@ -269,7 +297,52 @@ export default function App() {
           </div>
         )}
 
-        {/* TO-DO LIST */}
+        {/* TAB 2: BUDGET BREAKDOWN */}
+        {activeTab === 'budget' && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+            <h3 className="text-2xl font-black text-gray-900 mb-2">Trip Expense Dashboard</h3>
+            <p className="text-gray-500 mb-8 text-sm">Track and analyze expenses across categories for {selectedTrip.replace(/_/g, ' ')}.</p>
+
+            <div className="bg-slate-900 text-white rounded-2xl p-6 mb-8 flex justify-between items-center shadow-md">
+              <div>
+                <span className="text-slate-400 text-xs uppercase tracking-wider font-bold block mb-1">Total Tracked Expenses</span>
+                <span className="text-4xl font-black text-emerald-400">${totalBudget.toFixed(2)}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-slate-400 text-xs uppercase tracking-wider font-bold block mb-1">Items Tracked</span>
+                <span className="text-2xl font-bold">{Object.values(categoryTotals).filter(v => v > 0).length} Categories</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(categoryTotals).map(([cat, amount]) => {
+                const percentage = totalBudget > 0 ? ((amount / totalBudget) * 100).toFixed(0) : 0;
+                return (
+                  <div key={cat} className="p-4 rounded-2xl border border-gray-100 bg-gray-50 flex flex-col justify-between">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-bold text-gray-800 flex items-center gap-2">
+                        {cat === 'Food' && '🍽️'}
+                        {cat === 'Transport' && '🚗'}
+                        {cat === 'Hotel' && '🏨'}
+                        {cat === 'Activity' && '🌲'}
+                        {cat === 'Nightlife' && '🍸'}
+                        {cat === 'Other' && '📌'}
+                        {cat}
+                      </span>
+                      <span className="font-black text-gray-900">${amount.toFixed(2)}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                      <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%` }}></div>
+                    </div>
+                    <span className="text-[10px] text-gray-400 text-right mt-1 font-semibold">{percentage}% of total</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: TO-DO LIST */}
         {activeTab === 'todo' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
             <h3 className="text-2xl font-black text-gray-900 mb-6">Pre-Trip Checklist</h3>
