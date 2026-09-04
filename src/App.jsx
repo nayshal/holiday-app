@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { supabase } from './supabaseClient'; // 👈 Your new Cloud DB Connection
 
 // 1. GLOBAL ERROR BOUNDARY
 class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
   static getDerivedStateFromError(error) { return { hasError: true, error }; }
   render() {
     if (this.state.hasError) {
@@ -27,41 +25,15 @@ class ErrorBoundary extends React.Component {
 }
 
 // Custom Leaflet Pins
-const customPinIcon = L.divIcon({
-  html: `<div style="background-color: #2563eb; color: white; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 16px;">📍</div>`,
-  className: 'custom-leaflet-icon',
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32]
-});
+const customPinIcon = L.divIcon({ html: `<div style="background-color: #2563eb; color: white; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 16px;">📍</div>`, className: 'custom-leaflet-icon', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32] });
+const worldScratchPinIcon = L.divIcon({ html: `<div style="background-color: #059669; color: white; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; border-radius: 50%; border: 2px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.35); font-size: 14px;">✨</div>`, className: 'scratch-pin-icon', iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -28] });
 
-const worldScratchPinIcon = L.divIcon({
-  html: `<div style="background-color: #059669; color: white; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; border-radius: 50%; border: 2px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.35); font-size: 14px;">✨</div>`,
-  className: 'scratch-pin-icon',
-  iconSize: [28, 28],
-  iconAnchor: [14, 28],
-  popupAnchor: [0, -28]
-});
-
-// Haversine Distance Formula (for Route Optimization)
 const getDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // km
+  const R = 6371; 
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
-
-const getLocal = (key, fallback) => {
-  if (typeof window === 'undefined') return fallback;
-  try {
-    const item = window.localStorage.getItem(key);
-    if (!item || item === 'null' || item === 'undefined') return fallback;
-    const parsed = JSON.parse(item);
-    if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback;
-    if (typeof fallback === 'object' && parsed === null) return fallback;
-    return parsed;
-  } catch (e) { return fallback; }
 };
 
 const ALL_COUNTRIES = [
@@ -85,78 +57,100 @@ function MainApp() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
+  // Cloud Sync States
+  const [isCloudLoaded, setIsCloudLoaded] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('Loading...'); // 'Loading...', 'Synced', 'Syncing...'
+
+  // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [addMode, setAddMode] = useState('standard'); 
+  const [isIdeaMode, setIsIdeaMode] = useState(false); 
   const [newActivity, setNewActivity] = useState({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '', paidBy: 'You' });
   const [newTransit, setNewTransit] = useState({ day: '', depTime: '', arrTime: '', origin: '', destination: '', carrier: '', flightNum: '', cost: '', paidBy: 'You', notes: '' });
+  const [magicText, setMagicText] = useState('');
 
   const [groupMembers, setGroupMembers] = useState(['You', 'Wife', 'Angus']);
   const [newMemberName, setNewMemberName] = useState('');
 
-  const [packingItems, setPackingItems] = useState(getLocal('travelPackingItems', []));
+  const [packingItems, setPackingItems] = useState([]);
   const [newPackingText, setNewPackingText] = useState('');
   const [newPackingAssignee, setNewPackingAssignee] = useState('You');
   
-  const [journalEntries, setJournalEntries] = useState(getLocal('travelJournalEntries', []));
+  const [journalEntries, setJournalEntries] = useState([]);
   const [newJournal, setNewJournal] = useState({ title: '', photoUrl: '', date: '', text: '' });
   const [isJournalModalOpen, setIsJournalModalOpen] = useState(false);
 
   const [vaultUnlocked, setVaultUnlocked] = useState(false);
   const [vaultPinInput, setVaultPinInput] = useState('');
   const [userPin, setUserPin] = useState(typeof window !== 'undefined' ? (localStorage.getItem('travelVaultPin') || '') : '');
-  const [vaultDocs, setVaultDocs] = useState(getLocal('travelVaultDocs', []));
+  const [vaultDocs, setVaultDocs] = useState([]);
   const [newDoc, setNewDoc] = useState({ title: '', refNumber: '', notes: '' });
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
 
-  const [geoCache, setGeoCache] = useState(getLocal('travelGeoCache', {}));
+  const [geoCache, setGeoCache] = useState(JSON.parse(localStorage.getItem('travelGeoCache') || '{}'));
   const [draggingItem, setDraggingItem] = useState(null);
-  const [visitedCountries, setVisitedCountries] = useState(getLocal('travelVisitedCountries', ['United States', 'United Kingdom']));
+  const [visitedCountries, setVisitedCountries] = useState(['United States', 'United Kingdom']);
   const [countrySearch, setCountrySearch] = useState('');
   const [weatherForecast, setWeatherForecast] = useState(null);
 
+  // --- CLOUD INIT ---
   useEffect(() => {
-    if (window.location.search.includes('reset=true')) {
-      localStorage.clear();
-      window.location.href = '/';
-      return;
-    }
-    const params = new URLSearchParams(window.location.search);
-    const sharedTripData = params.get('tripData');
-    if (sharedTripData) {
+    const fetchCloudData = async () => {
       try {
-        const decoded = JSON.parse(decodeURIComponent(atob(sharedTripData)));
-        if (decoded) { setItineraries(decoded); const firstKey = Object.keys(decoded)[0]; if (firstKey) setSelectedTrip(firstKey); return; }
-      } catch (err) { console.error("Failed to parse shared trip data"); }
-    }
-    const savedData = getLocal('myTravelData', null);
-    if (savedData && Object.keys(savedData).length > 0) {
-      setItineraries(savedData);
-      setSelectedTrip(Object.keys(savedData)[0]);
-    } else {
-      // DEFAULT RECOVERY STATE
-      const recoveredTrips = {
-        "Canada_Road_Trip": [
-          { day: 'Sept 20', time: '08:00 AM', activity: 'Train to Vancouver', type: 'transit', carrier: 'Amtrak', origin: 'Seattle', destination: 'Vancouver', cost: '65', paidBy: 'You', notes: 'Enjoy the scenic coastal views.' },
-          { day: 'Sept 21', time: '09:30 AM', activity: 'Flight to Calgary', type: 'transit', carrier: 'Air Canada', origin: 'Vancouver', destination: 'Calgary', cost: '150', paidBy: 'You', notes: 'Pick up rental car at YYC airport.' },
-          { day: 'Sept 22', time: '03:00 PM', activity: 'Check-in: Pocaterra Inn', location: 'Canmore, AB', type: 'standard', cost: '200', paidBy: 'You', notes: 'Basecamp for Banff (Sept 22-25).' },
-          { day: 'Sept 23', time: '06:00 AM', activity: 'Sunrise at Moraine Lake', location: 'Moraine Lake, AB', type: 'standard', cost: '0', paidBy: 'You', notes: 'Arrive extremely early to secure parking.' },
-          { day: 'Sept 25', time: '04:00 PM', activity: 'Check-in: Velora Hotel', location: 'Hinton, AB', type: 'standard', cost: '180', paidBy: 'Wife', notes: 'Basecamp for Jasper (Sept 25-28).' },
-          { day: 'Sept 28', time: '04:00 PM', activity: 'Check-in: Vagabond Lodge', location: 'Golden, BC', type: 'standard', cost: '210', paidBy: 'You', notes: 'Basecamp for Yoho & Glacier (Sept 28-30).' }
-        ]
-      };
-      setItineraries(recoveredTrips);
-      setSelectedTrip('Canada_Road_Trip');
-    }
+        const { data, error } = await supabase.from('travel_state').select('payload').eq('id', 'main_trip').single();
+        if (data && data.payload && Object.keys(data.payload).length > 0) {
+          const p = data.payload;
+          if (p.itineraries) {
+            setItineraries(p.itineraries);
+            if (!selectedTrip && Object.keys(p.itineraries).length > 0) setSelectedTrip(Object.keys(p.itineraries)[0]);
+          }
+          if (p.packingItems) setPackingItems(p.packingItems);
+          if (p.journalEntries) setJournalEntries(p.journalEntries);
+          if (p.vaultDocs) setVaultDocs(p.vaultDocs);
+          if (p.visitedCountries) setVisitedCountries(p.visitedCountries);
+          if (p.groupMembers) setGroupMembers(p.groupMembers);
+        } else {
+          // Fallback if cloud is completely empty
+          const recoveredTrips = { "Canada_Road_Trip": [ { day: 'Sept 20', time: '08:00 AM', activity: 'Train to Vancouver', type: 'transit', carrier: 'Amtrak', origin: 'Seattle', destination: 'Vancouver', cost: '65', paidBy: 'You' }, { day: 'Sept 22', time: '03:00 PM', activity: 'Check-in: Pocaterra Inn', location: 'Canmore, AB', type: 'standard', cost: '200', paidBy: 'You' } ] };
+          setItineraries(recoveredTrips);
+          setSelectedTrip('Canada_Road_Trip');
+        }
+      } catch (err) {
+        console.error("Cloud connection failed. Falling back.", err);
+      } finally {
+        setIsCloudLoaded(true);
+        setSyncStatus('✅ Saved to Cloud');
+      }
+    };
+    fetchCloudData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { if (itineraries && Object.keys(itineraries).length > 0) localStorage.setItem('myTravelData', JSON.stringify(itineraries)); }, [itineraries]);
+  // --- AUTO CLOUD SAVE (DEBOUNCED) ---
   useEffect(() => {
-    localStorage.setItem('travelVaultDocs', JSON.stringify(vaultDocs || []));
-    localStorage.setItem('travelPackingItems', JSON.stringify(packingItems || []));
-    localStorage.setItem('travelJournalEntries', JSON.stringify(journalEntries || []));
+    if (!isCloudLoaded) return;
+    
+    setSyncStatus('☁️ Syncing...');
+    const payload = { itineraries, packingItems, journalEntries, vaultDocs, visitedCountries, groupMembers };
+    
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        await supabase.from('travel_state').update({ payload }).eq('id', 'main_trip');
+        setSyncStatus('✅ Saved to Cloud');
+      } catch (err) {
+        setSyncStatus('⚠️ Sync Error');
+        console.error(err);
+      }
+    }, 1500); // Waits 1.5 seconds after you stop typing/dragging to save to DB
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [itineraries, packingItems, journalEntries, vaultDocs, visitedCountries, groupMembers, isCloudLoaded]);
+
+  // Save GeoCache locally so we don't spam the cloud DB with coordinates
+  useEffect(() => {
     localStorage.setItem('travelGeoCache', JSON.stringify(geoCache || {}));
-    localStorage.setItem('travelVisitedCountries', JSON.stringify(visitedCountries || []));
-  }, [vaultDocs, packingItems, journalEntries, geoCache, visitedCountries]);
+  }, [geoCache]);
+
 
   let currentTripData = Array.isArray(itineraries?.[selectedTrip]) ? itineraries[selectedTrip].filter(item => item !== null && typeof item === 'object') : [];
 
@@ -167,15 +161,15 @@ function MainApp() {
     );
   }
 
-  const todoData = currentTripData.filter(item => (item?.day || '').toLowerCase().includes('to do'));
-  let itineraryData = currentTripData.filter(item => !(item?.day || '').toLowerCase().includes('to do'));
+  const todoData = currentTripData.filter(item => (item?.day || '').toLowerCase() === 'to do');
+  let itineraryData = currentTripData.filter(item => (item?.day || '').toLowerCase() !== 'to do');
 
   const getCategory = (text) => {
     const t = (text || '').toLowerCase();
     if (t.includes('hotel') || t.includes('motel') || t.includes('inn') || t.includes('lodge')) return 'Hotel';
     if (t.includes('flight') || t.includes('airport') || t.includes('transit')) return 'Transport';
     if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('restaurant')) return 'Food';
-    if (t.includes('drive') || t.includes('car') || t.includes('train')) return 'Transport';
+    if (t.includes('drive') || t.includes('car') || t.includes('train') || t.includes('rafting')) return 'Activity';
     if (t.includes('hike') || t.includes('lake') || t.includes('park') || t.includes('tour')) return 'Activity';
     if (t.includes('bar') || t.includes('club')) return 'Nightlife';
     return 'Other';
@@ -191,6 +185,9 @@ function MainApp() {
     groups[day].push(item);
     return groups;
   }, {});
+
+  const unscheduledItems = groupedItinerary['Unscheduled'] || [];
+  const scheduledDays = Object.keys(groupedItinerary).filter(d => d !== 'Unscheduled');
 
   const getIcon = (text) => {
     const cat = getCategory(text);
@@ -215,7 +212,6 @@ function MainApp() {
 
   const mapItems = itineraryData.map(item => getMapLinkData(item)).filter(Boolean);
 
-  // Auto Geocoder
   useEffect(() => {
     if (activeTab !== 'map' && activeTab !== 'itinerary') return;
     const locationsToFetch = [...new Set(mapItems.map(m => m?.query))].filter(q => q && geoCache[q] === undefined);
@@ -245,7 +241,6 @@ function MainApp() {
     ...item, coords: geoCache && geoCache[item?.query] && geoCache[item?.query] !== 'NOT_FOUND' ? geoCache[item?.query] : null
   })).filter(m => m && m.coords && Array.isArray(m.coords));
 
-  // Live Weather API
   useEffect(() => {
     if (activeTab === 'itinerary' && resolvedMarkers.length > 0) {
       const coords = resolvedMarkers[0].coords;
@@ -283,24 +278,23 @@ function MainApp() {
     return `🚗 ${mins} min drive (${miles} mi)`;
   };
 
-  // SMART ROUTE OPTIMIZER (Nearest Neighbor via Haversine)
   const optimizeDayRoute = (day) => {
     const dayItems = groupedItinerary[day];
     if (!dayItems || dayItems.length <= 1) return;
 
     const validItems = dayItems.filter(item => {
-       if (item.type === 'transit') return false; // Don't move transits
+       if (item.type === 'transit') return false; 
        const mapData = getMapLinkData(item);
        return mapData && geoCache[mapData.query] && geoCache[mapData.query] !== 'NOT_FOUND';
     });
 
     if (validItems.length !== dayItems.length) {
-       alert("Optimization unavailable: Some locations on this day haven't been geocoded yet, or contain transit schedules. Wait a few seconds for the map to finish searching.");
+       alert("Optimization unavailable: Some locations on this day haven't been geocoded yet, or contain transit schedules.");
        return;
     }
 
     let unvisited = [...dayItems];
-    let current = unvisited.shift(); // Keep first item (hotel/start) fixed
+    let current = unvisited.shift();
     let optimized = [current];
 
     while(unvisited.length > 0) {
@@ -313,10 +307,7 @@ function MainApp() {
         const uMapData = getMapLinkData(unvisited[i]);
         const [lat2, lon2] = geoCache[uMapData.query];
         const dist = getDistance(lat1, lon1, lat2, lon2);
-        if (dist < shortestDist) {
-          shortestDist = dist;
-          nearestIdx = i;
-        }
+        if (dist < shortestDist) { shortestDist = dist; nearestIdx = i; }
       }
       current = unvisited.splice(nearestIdx, 1)[0];
       optimized.push(current);
@@ -328,13 +319,43 @@ function MainApp() {
     setItineraries({ ...itineraries, [selectedTrip]: newTripData });
   };
 
-  const handleAddActivity = (e) => {
+  const handleAddActivity = async (e) => {
     e.preventDefault();
+    if (addMode === 'magic') {
+      if (!magicText.trim()) return;
+      setIsGeneratingAi(true);
+      try {
+        const aiPromptText = `Extract the travel booking details from this text and format them into the itinerary JSON array format. Text: ${magicText}`;
+        const res = await fetch('/api/generate-trip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: aiPromptText }) });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        if (data.itinerary && data.itinerary[0]?.day === 'Error') { alert("Could not extract travel details."); setIsGeneratingAi(false); return; }
+
+        const updatedTrips = { ...itineraries };
+        if (!updatedTrips[selectedTrip]) updatedTrips[selectedTrip] = [];
+        const processedItinerary = data.itinerary.map(item => {
+           const activityLower = (item.activity || '').toLowerCase();
+           if (activityLower.includes('flight') || activityLower.includes('train') || activityLower.includes('transit')) {
+               return { ...item, type: 'transit', origin: item.location || 'Origin', destination: item.location || 'Destination', depTime: item.time || '', arrTime: item.time || '', carrier: 'Imported Transit', flightNum: '' };
+           }
+           return { ...item, type: 'standard' };
+        });
+
+        updatedTrips[selectedTrip] = [...updatedTrips[selectedTrip], ...processedItinerary];
+        setItineraries(updatedTrips);
+        setIsModalOpen(false);
+        setMagicText('');
+      } catch (err) { alert('Failed to import: ' + err.message); } 
+      finally { setIsGeneratingAi(false); }
+      return;
+    }
+
     const updatedTrips = { ...itineraries };
     if (!updatedTrips[selectedTrip]) updatedTrips[selectedTrip] = [];
     
     if (addMode === 'standard') {
-      updatedTrips[selectedTrip] = [...updatedTrips[selectedTrip], { ...newActivity, type: 'standard' }];
+      const finalDay = isIdeaMode ? 'Unscheduled' : newActivity.day;
+      updatedTrips[selectedTrip] = [...updatedTrips[selectedTrip], { ...newActivity, day: finalDay, type: 'standard' }];
     } else {
       updatedTrips[selectedTrip] = [...updatedTrips[selectedTrip], { 
         ...newTransit, type: 'transit', activity: `Transit: ${newTransit.origin} to ${newTransit.destination}`, location: newTransit.destination
@@ -342,8 +363,31 @@ function MainApp() {
     }
     setItineraries(updatedTrips);
     setIsModalOpen(false);
+    setIsIdeaMode(false);
     setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '', paidBy: 'You' });
     setNewTransit({ day: '', depTime: '', arrTime: '', origin: '', destination: '', carrier: '', flightNum: '', cost: '', paidBy: 'You', notes: '' });
+  };
+
+  const handleGenerateAiTrip = async (e) => {
+    e.preventDefault();
+    if (!aiPrompt.trim()) return;
+    setIsGeneratingAi(true);
+
+    try {
+      const res = await fetch('/api/generate-trip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: aiPrompt }) });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      if (data.itinerary && data.itinerary[0]?.day === 'Error') { alert(data.itinerary[0].activity); setIsGeneratingAi(false); return; }
+
+      const tripName = aiPrompt.split(' ').slice(0, 3).join('_').replace(/[^a-zA-Z0-9_]/g, '') || 'AI_Trip';
+      const formattedTripName = tripName.charAt(0).toUpperCase() + tripName.slice(1);
+
+      const updated = { ...itineraries, [formattedTripName]: data.itinerary };
+      setItineraries(updated);
+      setSelectedTrip(formattedTripName);
+      setActiveTab('itinerary');
+      setAiPrompt('');
+    } catch (err) { alert('Failed to generate AI trip: ' + err.message); } finally { setIsGeneratingAi(false); }
   };
 
   const handleDragStart = (e, item, day) => { setDraggingItem({ item, day }); };
@@ -357,16 +401,20 @@ function MainApp() {
       tripData[sourceItemIndex].day = targetDay;
       const [removed] = tripData.splice(sourceItemIndex, 1);
       const targetDayItems = tripData.filter(i => (i?.day || '') === targetDay);
-      const insertAtIndex = tripData.findIndex(i => i === targetDayItems[targetIndex]);
-      if (insertAtIndex > -1) { tripData.splice(insertAtIndex, 0, removed); } 
-      else { tripData.push(removed); }
+      
+      if (targetDayItems.length === 0) { tripData.push(removed); } 
+      else {
+        const insertAtIndex = tripData.findIndex(i => i === targetDayItems[targetIndex || 0]);
+        if (insertAtIndex > -1) { tripData.splice(insertAtIndex, 0, removed); } 
+        else { tripData.push(removed); }
+      }
       setItineraries({ ...itineraries, [selectedTrip]: tripData });
     }
     setDraggingItem(null);
   };
 
-  if (!selectedTrip && (!itineraries || Object.keys(itineraries).length === 0)) {
-    return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
+  if (!isCloudLoaded) {
+    return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">☁️ Connecting to Supabase Cloud...</div>;
   }
 
   const toggleCountryVisited = (cName) => {
@@ -416,7 +464,6 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800 pb-24">
-      {/* 🌟 PRINT CSS STYLES FOR BEAUTIFUL PDF EXPORT 🌟 */}
       <style>{`
         @media print {
           @page { margin: 15mm; size: auto; }
@@ -429,12 +476,21 @@ function MainApp() {
         }
       `}</style>
 
+      {/* CLOUD STATUS BAR */}
+      <div className="bg-slate-900 text-white text-xs font-bold py-1 px-4 text-center print-hide flex justify-between items-center">
+        <span>Travel SaaS Portal</span>
+        <span className={syncStatus.includes('Syncing') ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}>{syncStatus}</span>
+      </div>
+
       {/* Hero Cover Image */}
       <div className="relative h-64 md:h-80 w-full bg-slate-900 overflow-hidden print-hide">
         <img 
           src={
             (selectedTrip || '').toLowerCase().includes('usa') ? "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80" :
             (selectedTrip || '').toLowerCase().includes('canada') ? "https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('prague') ? "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('paris') ? "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('croatia') || (selectedTrip || '').toLowerCase().includes('split') ? "https://images.unsplash.com/photo-1555986873-10d9f4e3c59a?auto=format&fit=crop&w=1600&q=80" :
             "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1600&q=80"
           } 
           alt="Destination Cover"
@@ -465,7 +521,6 @@ function MainApp() {
         </div>
       </div>
 
-      {/* PRINT-ONLY HEADER FOR PDF */}
       <div className="hidden print-only mb-8 text-center border-b-4 border-slate-900 pb-4 mt-8">
         <h1 className="text-5xl font-black text-slate-900 capitalize">{(selectedTrip || 'My Trip').replace(/_/g, ' ')}</h1>
         <p className="text-slate-500 font-bold tracking-widest mt-2 uppercase">Official Travel Itinerary • {itineraryData.length} Activities</p>
@@ -501,25 +556,47 @@ function MainApp() {
           </div>
         )}
 
-        {/* TAB 1: ITINERARY TIMELINE */}
+        {/* TAB 1: ITINERARY TIMELINE & IDEA BOARD */}
         {activeTab === 'itinerary' && (
           <div className="space-y-10 print:space-y-6">
-            {Object.keys(groupedItinerary).map((day, dayIndex) => (
+            
+            {/* UNSCHEDULED IDEA BOARD */}
+            <div className="bg-purple-50 rounded-3xl p-6 md:p-8 shadow-sm border border-purple-200 print-hide" onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'Unscheduled', unscheduledItems.length)}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-black text-purple-900 flex items-center gap-3">💡 Idea Board <span className="text-xs font-bold bg-purple-200 text-purple-800 px-3 py-1 rounded-full">{unscheduledItems.length} Ideas</span></h3>
+                <span className="text-xs font-bold text-purple-600 hidden md:block">Drag cards down into the itinerary to schedule them</span>
+              </div>
+              {unscheduledItems.length > 0 ? (
+                <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                  {unscheduledItems.map((item, index) => {
+                    const mapData = getMapLinkData(item);
+                    return (
+                      <div key={index} draggable onDragStart={(e) => handleDragStart(e, item, 'Unscheduled')} className="min-w-[280px] max-w-[280px] bg-white rounded-2xl p-5 border border-purple-100 shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start mb-2"><span className="text-2xl">{getIcon(item?.activity)}</span>{item?.cost && <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-1 rounded-md">${item.cost}</span>}</div>
+                          <h4 className="text-md font-bold text-gray-900 leading-tight mb-1">{item?.activity}</h4>
+                          {mapData && <span className="text-xs font-bold text-purple-600 block mb-2">📍 {mapData.label}</span>}
+                          {item?.notes && <p className="text-xs text-gray-500 italic line-clamp-3">{item.notes}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-purple-400 font-bold border-2 border-dashed border-purple-200 rounded-2xl">Drop items here or use the "💡 Save to Idea Board" toggle when adding an activity.</div>
+              )}
+            </div>
+
+            {/* SCHEDULED TIMELINE */}
+            {scheduledDays.map((day, dayIndex) => (
               <div key={dayIndex} className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 print-shadow-none print:p-0 print:border-none" onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, day, 0)}>
                 <h3 className="text-2xl font-black text-gray-900 mb-6 flex items-center justify-between border-b pb-4 print:border-slate-300">
-                  <span className="flex items-center gap-3">
-                    <span className="bg-blue-100 text-blue-700 w-10 h-10 rounded-full flex items-center justify-center text-lg print:bg-slate-900 print:text-white">{dayIndex + 1}</span>
-                    {day}
-                  </span>
-                  {/* SMART ROUTE OPTIMIZER BUTTON */}
-                  <button onClick={() => optimizeDayRoute(day)} className="bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-bold px-3 py-1.5 rounded-full transition-colors print-hide">
-                    🪄 Optimize Route
-                  </button>
+                  <span className="flex items-center gap-3"><span className="bg-blue-100 text-blue-700 w-10 h-10 rounded-full flex items-center justify-center text-lg print:bg-slate-900 print:text-white">{dayIndex + 1}</span>{day}</span>
+                  <button onClick={() => optimizeDayRoute(day)} className="bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-bold px-3 py-1.5 rounded-full transition-colors print-hide">🪄 Optimize Route</button>
                 </h3>
                 <div className="relative border-l-2 border-gray-200 ml-4 md:ml-5 space-y-6 pl-8 md:pl-10 print:border-slate-300 print:ml-5 print:pl-6">
                   {groupedItinerary[day].map((item, index) => {
                     const uniqueKey = `${day}-${index}`;
-                    const isExpanded = expandedNotes[uniqueKey];
                     const mapData = getMapLinkData(item);
                     const routeLeg = getRouteLegEstimate(index, groupedItinerary[day]);
 
@@ -533,21 +610,12 @@ function MainApp() {
                               {item.flightNum && <span className="text-xs font-mono font-bold bg-white/20 px-2 py-0.5 rounded print:bg-slate-300">{item.flightNum}</span>}
                             </div>
                             <div className="p-5 flex items-center justify-between relative">
-                              <div className="flex-1">
-                                <span className="text-3xl font-black text-indigo-900 block print:text-slate-900">{item.depTime || '--:--'}</span>
-                                <span className="text-sm font-bold text-indigo-600 uppercase print:text-slate-600">{item.origin || 'Origin'}</span>
-                              </div>
+                              <div className="flex-1"><span className="text-3xl font-black text-indigo-900 block print:text-slate-900">{item.depTime || '--:--'}</span><span className="text-sm font-bold text-indigo-600 uppercase print:text-slate-600">{item.origin || 'Origin'}</span></div>
                               <div className="flex-1 px-4 flex flex-col items-center justify-center relative"><span className="text-indigo-300 print:text-slate-300 block mb-1">------ ✈️ ------</span></div>
-                              <div className="flex-1 text-right">
-                                <span className="text-3xl font-black text-indigo-900 block print:text-slate-900">{item.arrTime || '--:--'}</span>
-                                <span className="text-sm font-bold text-indigo-600 uppercase print:text-slate-600">{item.destination || 'Destination'}</span>
-                              </div>
+                              <div className="flex-1 text-right"><span className="text-3xl font-black text-indigo-900 block print:text-slate-900">{item.arrTime || '--:--'}</span><span className="text-sm font-bold text-indigo-600 uppercase print:text-slate-600">{item.destination || 'Destination'}</span></div>
                             </div>
                             {(item.notes || item.cost) && (
-                              <div className="bg-white p-3 border-t border-indigo-100 flex justify-between items-center text-sm print:border-slate-200">
-                                <span className="text-gray-500 italic">{item.notes}</span>
-                                {item.cost && <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md print:bg-transparent">${item.cost}</span>}
-                              </div>
+                              <div className="bg-white p-3 border-t border-indigo-100 flex justify-between items-center text-sm print:border-slate-200"><span className="text-gray-500 italic">{item.notes}</span>{item.cost && <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md print:bg-transparent">${item.cost}</span>}</div>
                             )}
                           </div>
                         </div>
@@ -574,8 +642,7 @@ function MainApp() {
                             )}
                             {item?.notes && (
                               <div className="mt-3 text-sm text-gray-600 bg-white p-3 rounded-xl border border-gray-100 leading-relaxed print:bg-transparent print:border-none print:p-0 print:mt-1">
-                                <p className={!isExpanded && item.notes.length > 100 ? "line-clamp-2 italic print:line-clamp-none" : "italic"}>{item.notes}</p>
-                                {item.notes.length > 100 && (<button onClick={() => toggleNote(uniqueKey)} className="text-xs font-bold text-blue-600 hover:underline mt-1 block print-hide">{isExpanded ? 'Show less ▲' : 'Read more ▼'}</button>)}
+                                <p className="italic">{item.notes}</p>
                               </div>
                             )}
                           </div>
@@ -639,12 +706,75 @@ function MainApp() {
           </div>
         )}
 
+        {/* TAB 2: NATIVE INTERACTIVE LEAFLET MAP VIEW */}
+        {activeTab === 'map' && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">Interactive Map Hub</h3>
+                <p className="text-gray-500 text-sm">Real-time mapped locations automatically extracted from your itinerary.</p>
+              </div>
+              <span className="bg-emerald-100 text-emerald-800 font-bold px-3 py-1 text-xs rounded-full">{resolvedMarkers.length} Locations Pinned</span>
+            </div>
+            
+            <div className="rounded-2xl overflow-hidden border border-gray-200 h-[500px] w-full shadow-inner relative bg-slate-100">
+              {resolvedMarkers.length > 0 && resolvedMarkers[0]?.coords ? (
+                <MapContainer center={resolvedMarkers[0].coords} zoom={12} scrollWheelZoom={true} style={{ height: '100%', width: '100%', zIndex: 0 }}>
+                  <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors' />
+                  {resolvedMarkers.map((marker, idx) => (
+                    <Marker key={idx} position={marker.coords} icon={customPinIcon}>
+                      <Popup className="font-sans"><strong className="text-sm block mb-1">{marker.label}</strong><a href={marker.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs font-bold">Get Directions ↗</a></Popup>
+                    </Marker>
+                  ))}
+                  {resolvedMarkers.length > 1 && <Polyline positions={resolvedMarkers.map(m => m.coords)} color="#3b82f6" weight={3} dashArray="5, 10" />}
+                </MapContainer>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                  <span className="text-4xl mb-2 animate-bounce">📍</span>
+                  <p className="font-semibold">Geocoding map locations...</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB BUDGET */}
+        {activeTab === 'budget' && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 print-hide">
+            <h3 className="text-2xl font-black text-gray-900 mb-6">Trip Expense Dashboard</h3>
+            <div className="bg-slate-900 text-white rounded-2xl p-6 mb-8 flex justify-between items-center shadow-md">
+              <div><span className="text-slate-400 text-xs uppercase font-bold block mb-1">Total Expenses</span><span className="text-4xl font-black text-emerald-400">${totalBudget.toFixed(2)}</span></div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB SPLIT */}
+        {activeTab === 'split' && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 print-hide">
+            <h3 className="text-2xl font-black text-gray-900 mb-6">Group Expense Splitter</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(groupMembers || []).map((member) => {
+                const paid = memberPaidTotals[member] || 0;
+                const balance = paid - fairSharePerPerson;
+                return (
+                  <div key={member} className="p-5 rounded-2xl border border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <div><span className="font-black text-lg text-gray-900 block">{member}</span></div>
+                    <div className="text-right">
+                      {balance >= 0 ? <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-full">Owed +${balance.toFixed(2)}</span> : <span className="bg-red-100 text-red-800 text-xs font-bold px-3 py-1.5 rounded-full">Owes -${Math.abs(balance).toFixed(2)}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </main>
 
       {/* Floating Add Activity Button */}
       <button onClick={() => { setIsModalOpen(true); setAddMode('standard'); }} className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl hover:bg-blue-700 hover:scale-105 transition-all duration-200 flex items-center justify-center text-3xl font-light z-40 print-hide">+</button>
 
-      {/* Add Activity / Transit Modal */}
+      {/* Add Activity / Transit / Magic Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 print-hide">
           <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -654,18 +784,38 @@ function MainApp() {
             </div>
             
             {/* TYPE TOGGLE */}
-            <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
-              <button onClick={() => setAddMode('standard')} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${addMode === 'standard' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>🏖️ Standard Stop</button>
-              <button onClick={() => setAddMode('transit')} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${addMode === 'transit' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>✈️ Transit / Flight</button>
+            <div className="flex bg-gray-100 p-1 rounded-xl mb-6 overflow-x-auto">
+              <button type="button" onClick={() => setAddMode('standard')} className={`flex-1 py-2 px-3 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${addMode === 'standard' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>🏖️ Standard</button>
+              <button type="button" onClick={() => setAddMode('transit')} className={`flex-1 py-2 px-3 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${addMode === 'transit' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>✈️ Transit</button>
+              <button type="button" onClick={() => setAddMode('magic')} className={`flex-1 py-2 px-3 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${addMode === 'magic' ? 'bg-white shadow text-purple-600' : 'text-gray-500'}`}>🪄 Magic Import</button>
             </div>
 
             <form onSubmit={handleAddActivity} className="space-y-4">
-              {addMode === 'standard' ? (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Day/Date *</label><input required type="text" placeholder="e.g. Day 1" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newActivity.day} onChange={e => setNewActivity({...newActivity, day: e.target.value})} /></div>
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Time</label><input type="text" placeholder="e.g. 10:00 AM" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} /></div>
+              
+              {addMode === 'magic' ? (
+                <div className="space-y-4">
+                  <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 mb-4">
+                    <p className="text-sm text-purple-800 font-bold mb-1">AI Reservation Importer</p>
+                    <p className="text-xs text-purple-600">Paste your flight confirmation, hotel booking, or train ticket email below. The AI will automatically extract the dates, times, carriers, and locations into your itinerary.</p>
                   </div>
+                  <textarea rows="6" required placeholder="e.g. Booking Confirmation: Your flight BA123 departs LHR at 08:00 AM on Sept 15 and arrives at JFK at 11:30 AM..." className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-purple-500 text-sm" value={magicText} onChange={e => setMagicText(e.target.value)}></textarea>
+                </div>
+              ) : addMode === 'standard' ? (
+                <>
+                  <div className="mb-2">
+                    <label className="flex items-center gap-3 cursor-pointer bg-purple-50 border border-purple-200 p-3 rounded-xl hover:bg-purple-100 transition-colors">
+                      <input type="checkbox" className="w-5 h-5 text-purple-600 rounded cursor-pointer" checked={isIdeaMode} onChange={e => setIsIdeaMode(e.target.checked)} />
+                      <span className="font-bold text-purple-900 text-sm">💡 Save to Idea Board (Decide day later)</span>
+                    </label>
+                  </div>
+
+                  {!isIdeaMode && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><label className="block text-sm font-bold text-gray-700 mb-1">Day/Date *</label><input required={!isIdeaMode} type="text" placeholder="e.g. Day 1" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newActivity.day} onChange={e => setNewActivity({...newActivity, day: e.target.value})} /></div>
+                      <div><label className="block text-sm font-bold text-gray-700 mb-1">Time</label><input type="text" placeholder="e.g. 10:00 AM" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} /></div>
+                    </div>
+                  )}
+
                   <div><label className="block text-sm font-bold text-gray-700 mb-1">Activity *</label><input required type="text" placeholder="e.g. Visit Museum" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newActivity.activity} onChange={e => setNewActivity({...newActivity, activity: e.target.value})} /></div>
                   <div className="grid grid-cols-2 gap-4">
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">Location</label><input type="text" placeholder="e.g. Paris" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} /></div>
@@ -691,7 +841,10 @@ function MainApp() {
                   <div><label className="block text-sm font-bold text-gray-700 mb-1">Notes</label><textarea rows="2" placeholder="Terminal 5, Gate info..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newTransit.notes} onChange={e => setNewTransit({...newTransit, notes: e.target.value})}></textarea></div>
                 </>
               )}
-              <button type="submit" className="w-full py-4 mt-2 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg hover:bg-blue-700 transition-colors">Add to Itinerary</button>
+
+              <button type="submit" disabled={isGeneratingAi} className="w-full py-4 mt-2 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg hover:bg-blue-700 transition-colors">
+                {isGeneratingAi ? '✨ Extracting details...' : 'Add to Itinerary'}
+              </button>
             </form>
           </div>
         </div>
