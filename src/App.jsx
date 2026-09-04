@@ -93,20 +93,27 @@ function MainApp() {
   const [countrySearch, setCountrySearch] = useState('');
   const [weatherForecast, setWeatherForecast] = useState(null);
 
-  // --- CLOUD INIT WITH SMART EXCEL TAB MERGE ---
+  // --- CLOUD INIT WITH SMART EXCEL DATA INJECTION ---
   useEffect(() => {
     const fetchCloudData = async () => {
       try {
         const { data, error } = await supabase.from('travel_state').select('payload').eq('id', 'main_trip').single();
         
         let currentCloudTrips = {};
+        let shouldForceUpdate = false;
 
         if (data && data.payload && Object.keys(data.payload).length > 0) {
           const p = data.payload;
           if (p.itineraries) {
             currentCloudTrips = p.itineraries;
-            setItineraries(p.itineraries);
-            if (!selectedTrip && Object.keys(p.itineraries).length > 0) setSelectedTrip(Object.keys(p.itineraries)[0]);
+            
+            // Check if the cloud only holds the tiny stub template
+            if (Object.keys(currentCloudTrips).length <= 1 && currentCloudTrips["Canada_Road_Trip"] && currentCloudTrips["Canada_Road_Trip"].length < 10) {
+                shouldForceUpdate = true;
+            } else {
+                setItineraries(p.itineraries);
+                if (!selectedTrip && Object.keys(p.itineraries).length > 0) setSelectedTrip(Object.keys(p.itineraries)[0]);
+            }
           }
           if (p.packingItems) setPackingItems(p.packingItems);
           if (p.journalEntries) setJournalEntries(p.journalEntries);
@@ -114,25 +121,52 @@ function MainApp() {
           if (p.visitedCountries) setVisitedCountries(p.visitedCountries);
           if (p.groupMembers) setGroupMembers(p.groupMembers);
         } else {
-          // Fallback if cloud is completely empty
-          const recoveredTrips = { "Canada_Road_Trip": [ { day: 'Sept 20', time: '08:00 AM', activity: 'Train to Vancouver', type: 'transit', carrier: 'Amtrak', origin: 'Seattle', destination: 'Vancouver', cost: '65', paidBy: 'You' }, { day: 'Sept 22', time: '03:00 PM', activity: 'Check-in: Pocaterra Inn', location: 'Canmore, AB', type: 'standard', cost: '200', paidBy: 'You' } ] };
-          currentCloudTrips = recoveredTrips;
-          setItineraries(recoveredTrips);
-          setSelectedTrip('Canada_Road_Trip');
+          shouldForceUpdate = true;
         }
 
-        // ONE-TIME IMPORT: If the cloud only has Canada, pull the master JSON to restore all Excel tabs!
-        if (Object.keys(currentCloudTrips).length <= 1) {
-           fetch('/master_itinerary.json')
-            .then(res => res.json())
-            .then(masterData => {
-              if (masterData) {
-                const merged = { ...masterData, ...currentCloudTrips };
-                setItineraries(merged);
-                setSelectedTrip(Object.keys(merged)[0]);
-              }
-            })
-            .catch(err => console.log("No master JSON found locally, proceeding with Canada only.", err));
+        // ONE-TIME IMPORT: Injecting the full historical travel data
+        if (shouldForceUpdate) {
+            const masterData = {
+              "Canada_Road_Trip": [
+                { day: 'Sept 19', time: '10:00 AM', activity: 'Fly to Seattle', type: 'transit', origin: 'London', destination: 'Seattle', carrier: 'British Airways', cost: '450', paidBy: 'You' },
+                { day: 'Sept 20', time: '08:00 AM', activity: 'Train to Vancouver', type: 'transit', origin: 'Seattle', destination: 'Vancouver', carrier: 'Amtrak', cost: '65', paidBy: 'You', notes: 'Enjoy the scenic coastal views.' },
+                { day: 'Sept 21', time: '09:30 AM', activity: 'Flight to Calgary', type: 'transit', origin: 'Vancouver', destination: 'Calgary', carrier: 'Air Canada', cost: '150', paidBy: 'You', notes: 'Pick up rental car at YYC airport.' },
+                { day: 'Sept 22', time: '08:00 AM', activity: 'Hike Grassi Lakes', location: 'Grassi Lakes Trailhead, Canmore, AB', type: 'standard', cost: '0', paidBy: 'You', notes: 'Beautiful turquoise lakes. Pack bear spray.' },
+                { day: 'Sept 22', time: '03:00 PM', activity: 'Check-in: Pocaterra Inn', location: 'Canmore, AB', type: 'standard', cost: '200', paidBy: 'You', notes: 'Basecamp for Banff (Sept 22-25).' },
+                { day: 'Sept 23', time: '05:30 AM', activity: 'Moraine Lake & Larch Valley', location: 'Moraine Lake, AB', type: 'standard', cost: '0', paidBy: 'You', notes: 'Arrive extremely early to secure shuttle parking.' },
+                { day: 'Sept 24', time: '09:00 AM', activity: 'Rawson Lake Hike', location: 'Kananaskis, AB', type: 'standard', cost: '0', paidBy: 'You' },
+                { day: 'Sept 25', time: '10:00 AM', activity: 'Drive Icefields Parkway', location: 'Icefields Parkway, AB', type: 'standard', cost: '0', paidBy: 'You' },
+                { day: 'Sept 25', time: '01:00 PM', activity: 'Columbia Icefield Glacier Adventure & Skywalk', location: 'Columbia Icefield, AB', type: 'standard', cost: '85', paidBy: 'Wife', notes: 'Pre-booked tickets required.' },
+                { day: 'Sept 25', time: '04:00 PM', activity: 'Check-in: Velora Hotel', location: 'Hinton, AB', type: 'standard', cost: '180', paidBy: 'Wife', notes: 'Basecamp for Jasper (Sept 25-28).' },
+                { day: 'Sept 26', time: '08:30 AM', activity: 'Valley of the Five Lakes', location: 'Jasper, AB', type: 'standard', cost: '0', paidBy: 'You' },
+                { day: 'Sept 27', time: '09:00 AM', activity: 'Maligne Lake & Pyramid Lake', location: 'Maligne Lake, AB', type: 'standard', cost: '0', paidBy: 'You' },
+                { day: 'Sept 28', time: '03:00 PM', activity: 'Check-in: Vagabond Lodge', location: 'Golden, BC', type: 'standard', cost: '210', paidBy: 'You', notes: 'Basecamp for Yoho & Glacier (Sept 28-30).' },
+                { day: 'Sept 29', time: '09:00 AM', activity: 'Takakkaw Falls & Wapta Falls', location: 'Yoho National Park, BC', type: 'standard', cost: '0', paidBy: 'You' },
+                { day: 'Oct 3', time: '10:00 AM', activity: 'Flight Home', type: 'transit', origin: 'Calgary', destination: 'London', carrier: 'Air Canada', cost: '450', paidBy: 'You' }
+              ],
+              "Croatia_Stag_Do": [
+                { day: 'Sept 11', time: '08:00 AM', activity: 'Depart for Split', type: 'transit', origin: 'London Luton Airport', destination: 'Split, Croatia', carrier: 'EasyJet', cost: '120', paidBy: 'You', notes: 'Angus’s Stag Do!' },
+                { day: 'Sept 11', time: '08:00 PM', activity: 'Dinner at Bokamorra', location: 'Bokamorra, Split, Croatia', type: 'standard', cost: '40', paidBy: 'Angus', notes: 'Pizza and cocktails to kick off the weekend.' },
+                { day: 'Sept 12', time: '11:00 AM', activity: 'Private Party Boat', location: 'Split Harbor, Croatia', type: 'standard', cost: '150', paidBy: 'You', notes: 'Bring low-calorie tequila.' },
+                { day: 'Sept 12', time: '08:00 PM', activity: 'Dinner at Buffet Fife', location: 'Buffet Fife, Split, Croatia', type: 'standard', cost: '25', paidBy: 'You', notes: 'Traditional Croatian meal.' },
+                { day: 'Sept 13', time: '08:00 PM', activity: 'Dinner at Fabrique', location: 'Fabrique, Split, Croatia', type: 'standard', cost: '50', paidBy: 'Angus', notes: 'BBQ and drinks.' },
+                { day: 'Sept 14', time: '11:00 AM', activity: 'Flight Home', type: 'transit', origin: 'Split, Croatia', destination: 'London', carrier: 'EasyJet', cost: '120', paidBy: 'You' }
+              ],
+              "USA_Road_Trip": [
+                { day: 'Day 1', time: '10:00 AM', activity: 'Arrive in LA', location: 'Los Angeles, CA', type: 'standard', cost: '0', paidBy: 'You' },
+                { day: 'Day 2', time: '09:00 AM', activity: 'Universal Studios', location: 'Universal Studios Hollywood', type: 'standard', cost: '109', paidBy: 'You' },
+                { day: 'Day 3', time: '11:00 AM', activity: 'Walk of Fame & Griffith Observatory', location: 'Griffith Observatory, LA', type: 'standard', cost: '0', paidBy: 'You' },
+                { day: 'Day 4', time: '08:00 AM', activity: 'Drive to San Diego', type: 'transit', origin: 'Los Angeles', destination: 'San Diego', carrier: 'Car', cost: '20', paidBy: 'You' },
+                { day: 'Day 5', time: '10:00 AM', activity: 'San Diego Zoo', location: 'San Diego Zoo', type: 'standard', cost: '65', paidBy: 'You' },
+                { day: 'Day 7', time: '08:00 AM', activity: 'Grand Canyon Skydiving & South Rim', location: 'Grand Canyon National Park', type: 'standard', cost: '250', paidBy: 'You' },
+                { day: 'Day 9', time: '07:00 PM', activity: 'Concert & Shooting Range', location: 'Las Vegas, NV', type: 'standard', cost: '150', paidBy: 'You' },
+                { day: 'Day 12', time: '10:00 AM', activity: 'Alcatraz Tour', location: 'Alcatraz Island, San Francisco', type: 'standard', cost: '45', paidBy: 'You' },
+                { day: 'Day 14', time: '12:00 PM', activity: 'Wine Tasting', location: 'Napa Valley, CA', type: 'standard', cost: '80', paidBy: 'You' },
+                { day: 'Day 16', time: '09:00 AM', activity: 'Runyon Canyon Hike & Flight Home', location: 'Runyon Canyon, LA', type: 'standard', cost: '0', paidBy: 'You' }
+              ]
+            };
+            setItineraries(masterData);
+            setSelectedTrip("Canada_Road_Trip");
         }
 
       } catch (err) {
@@ -184,10 +218,10 @@ function MainApp() {
     const t = (text || '').toLowerCase();
     if (t.includes('hotel') || t.includes('motel') || t.includes('inn') || t.includes('lodge')) return 'Hotel';
     if (t.includes('flight') || t.includes('airport') || t.includes('transit')) return 'Transport';
-    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('restaurant')) return 'Food';
-    if (t.includes('drive') || t.includes('car') || t.includes('train') || t.includes('rafting')) return 'Activity';
-    if (t.includes('hike') || t.includes('lake') || t.includes('park') || t.includes('tour')) return 'Activity';
-    if (t.includes('bar') || t.includes('club')) return 'Nightlife';
+    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('restaurant') || t.includes('pizza') || t.includes('buffet')) return 'Food';
+    if (t.includes('drive') || t.includes('car') || t.includes('train') || t.includes('boat')) return 'Activity';
+    if (t.includes('hike') || t.includes('lake') || t.includes('park') || t.includes('tour') || t.includes('skydiving')) return 'Activity';
+    if (t.includes('bar') || t.includes('club') || t.includes('concert')) return 'Nightlife';
     return 'Other';
   };
 
@@ -220,7 +254,7 @@ function MainApp() {
     const rawLoc = (item?.location && item.location.trim() !== '') ? item.location : item?.activity;
     if (!rawLoc) return null;
     let cleanQuery = rawLoc.replace(/^(drive to|stay at|visit|check in at|check-in:)\s+/i, '').trim();
-    if (!cleanQuery.toLowerCase().includes('ab') && !cleanQuery.toLowerCase().includes('bc')) {
+    if (!cleanQuery.toLowerCase().includes('ab') && !cleanQuery.toLowerCase().includes('bc') && !cleanQuery.toLowerCase().includes('croatia') && !cleanQuery.toLowerCase().includes('ca')) {
         cleanQuery = `${cleanQuery}, ${(selectedTrip || '').replace(/_/g, ' ')}`;
     }
     return { label: rawLoc, query: cleanQuery, url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanQuery)}` };
