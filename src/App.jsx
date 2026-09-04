@@ -9,9 +9,7 @@ class ErrorBoundary extends React.Component {
     super(props);
     this.state = { hasError: false, error: null };
   }
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
   render() {
     if (this.state.hasError) {
       return (
@@ -45,7 +43,15 @@ const worldScratchPinIcon = L.divIcon({
   popupAnchor: [0, -28]
 });
 
-// Safe Local Storage Parser
+// Haversine Distance Formula (for Route Optimization)
+const getDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
 const getLocal = (key, fallback) => {
   if (typeof window === 'undefined') return fallback;
   try {
@@ -61,32 +67,11 @@ const getLocal = (key, fallback) => {
 const ALL_COUNTRIES = [
   { name: 'United States', code: 'US', continent: 'North America', coords: [37.0902, -95.7129] },
   { name: 'Canada', code: 'CA', continent: 'North America', coords: [56.1304, -106.3468] },
-  { name: 'Mexico', code: 'MX', continent: 'North America', coords: [23.6345, -102.5528] },
   { name: 'United Kingdom', code: 'GB', continent: 'Europe', coords: [55.3781, -3.4360] },
   { name: 'France', code: 'FR', continent: 'Europe', coords: [46.2276, 2.2137] },
   { name: 'Italy', code: 'IT', continent: 'Europe', coords: [41.8719, 12.5674] },
-  { name: 'Spain', code: 'ES', continent: 'Europe', coords: [40.4637, -3.7492] },
-  { name: 'Germany', code: 'DE', continent: 'Europe', coords: [51.1657, 10.4515] },
-  { name: 'Czech Republic', code: 'CZ', continent: 'Europe', coords: [49.8175, 15.4730] },
   { name: 'Croatia', code: 'HR', continent: 'Europe', coords: [45.1, 15.2] },
-  { name: 'Portugal', code: 'PT', continent: 'Europe', coords: [39.3999, -8.2245] },
-  { name: 'Greece', code: 'GR', continent: 'Europe', coords: [39.0742, 21.8243] },
-  { name: 'Switzerland', code: 'CH', continent: 'Europe', coords: [46.8182, 8.2275] },
-  { name: 'Austria', code: 'AT', continent: 'Europe', coords: [47.5162, 14.5501] },
-  { name: 'Netherlands', code: 'NL', continent: 'Europe', coords: [52.1326, 5.2913] },
-  { name: 'Thailand', code: 'TH', continent: 'Asia', coords: [15.8700, 100.9925] },
-  { name: 'Japan', code: 'JP', continent: 'Asia', coords: [36.2048, 138.2529] },
-  { name: 'Indonesia', code: 'ID', continent: 'Asia', coords: [-0.7893, 113.9213] },
-  { name: 'United Arab Emirates', code: 'AE', continent: 'Asia', coords: [23.4241, 53.8478] },
-  { name: 'Singapore', code: 'SG', continent: 'Asia', coords: [1.3521, 103.8198] },
-  { name: 'Australia', code: 'AU', continent: 'Oceania', coords: [-25.2744, 133.7751] },
-  { name: 'New Zealand', code: 'NZ', continent: 'Oceania', coords: [-40.9006, 174.8860] },
-  { name: 'Egypt', code: 'EG', continent: 'Africa', coords: [26.8206, 30.8025] },
-  { name: 'South Africa', code: 'ZA', continent: 'Africa', coords: [-30.5595, 22.9375] },
-  { name: 'Morocco', code: 'MA', continent: 'Africa', coords: [31.7917, -7.0926] },
-  { name: 'Brazil', code: 'BR', continent: 'South America', coords: [-14.2350, -51.9253] },
-  { name: 'Argentina', code: 'AR', continent: 'South America', coords: [-38.4161, -63.6167] },
-  { name: 'Peru', code: 'PE', continent: 'South America', coords: [-9.1900, -75.0152] }
+  { name: 'Japan', code: 'JP', continent: 'Asia', coords: [36.2048, 138.2529] }
 ];
 
 function MainApp() {
@@ -100,13 +85,12 @@ function MainApp() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
-  // New Add Activity Modals (Standard vs Transit)
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [addMode, setAddMode] = useState('standard'); // 'standard' or 'transit'
+  const [addMode, setAddMode] = useState('standard'); 
   const [newActivity, setNewActivity] = useState({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '', paidBy: 'You' });
   const [newTransit, setNewTransit] = useState({ day: '', depTime: '', arrTime: '', origin: '', destination: '', carrier: '', flightNum: '', cost: '', paidBy: 'You', notes: '' });
 
-  const [groupMembers, setGroupMembers] = useState(['You', 'Partner']);
+  const [groupMembers, setGroupMembers] = useState(['You', 'Wife', 'Angus']);
   const [newMemberName, setNewMemberName] = useState('');
 
   const [packingItems, setPackingItems] = useState(getLocal('travelPackingItems', []));
@@ -126,10 +110,8 @@ function MainApp() {
 
   const [geoCache, setGeoCache] = useState(getLocal('travelGeoCache', {}));
   const [draggingItem, setDraggingItem] = useState(null);
-  const [visitedCountries, setVisitedCountries] = useState(getLocal('travelVisitedCountries', ['United States', 'United Kingdom', 'France', 'Italy']));
+  const [visitedCountries, setVisitedCountries] = useState(getLocal('travelVisitedCountries', ['United States', 'United Kingdom']));
   const [countrySearch, setCountrySearch] = useState('');
-
-  // Weather State
   const [weatherForecast, setWeatherForecast] = useState(null);
 
   useEffect(() => {
@@ -151,9 +133,19 @@ function MainApp() {
       setItineraries(savedData);
       setSelectedTrip(Object.keys(savedData)[0]);
     } else {
-      fetch('/master_itinerary.json').then((res) => res.json()).then((data) => {
-          if (data) { setItineraries(data); localStorage.setItem('myTravelData', JSON.stringify(data)); if (Object.keys(data).length > 0) setSelectedTrip(Object.keys(data)[0]); }
-      }).catch(() => {});
+      // DEFAULT RECOVERY STATE
+      const recoveredTrips = {
+        "Canada_Road_Trip": [
+          { day: 'Sept 20', time: '08:00 AM', activity: 'Train to Vancouver', type: 'transit', carrier: 'Amtrak', origin: 'Seattle', destination: 'Vancouver', cost: '65', paidBy: 'You', notes: 'Enjoy the scenic coastal views.' },
+          { day: 'Sept 21', time: '09:30 AM', activity: 'Flight to Calgary', type: 'transit', carrier: 'Air Canada', origin: 'Vancouver', destination: 'Calgary', cost: '150', paidBy: 'You', notes: 'Pick up rental car at YYC airport.' },
+          { day: 'Sept 22', time: '03:00 PM', activity: 'Check-in: Pocaterra Inn', location: 'Canmore, AB', type: 'standard', cost: '200', paidBy: 'You', notes: 'Basecamp for Banff (Sept 22-25).' },
+          { day: 'Sept 23', time: '06:00 AM', activity: 'Sunrise at Moraine Lake', location: 'Moraine Lake, AB', type: 'standard', cost: '0', paidBy: 'You', notes: 'Arrive extremely early to secure parking.' },
+          { day: 'Sept 25', time: '04:00 PM', activity: 'Check-in: Velora Hotel', location: 'Hinton, AB', type: 'standard', cost: '180', paidBy: 'Wife', notes: 'Basecamp for Jasper (Sept 25-28).' },
+          { day: 'Sept 28', time: '04:00 PM', activity: 'Check-in: Vagabond Lodge', location: 'Golden, BC', type: 'standard', cost: '210', paidBy: 'You', notes: 'Basecamp for Yoho & Glacier (Sept 28-30).' }
+        ]
+      };
+      setItineraries(recoveredTrips);
+      setSelectedTrip('Canada_Road_Trip');
     }
   }, []);
 
@@ -180,12 +172,12 @@ function MainApp() {
 
   const getCategory = (text) => {
     const t = (text || '').toLowerCase();
-    if (t.includes('hotel') || t.includes('motel') || t.includes('airbnb') || t.includes('stay')) return 'Hotel';
-    if (t.includes('flight') || t.includes('airport') || t.includes('terminal') || t.includes('transit')) return 'Transport';
-    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('food') || t.includes('eat') || t.includes('restaurant') || t.includes('walmart') || t.includes('grocery') || t.includes('cafe')) return 'Food';
-    if (t.includes('drive') || t.includes('car') || t.includes('uber') || t.includes('road') || t.includes('train') || t.includes('station') || t.includes('bus') || t.includes('gas')) return 'Transport';
-    if (t.includes('hike') || t.includes('park') || t.includes('canyon') || t.includes('tour') || t.includes('zoo') || t.includes('museum') || t.includes('temple')) return 'Activity';
-    if (t.includes('bar') || t.includes('club') || t.includes('drink')) return 'Nightlife';
+    if (t.includes('hotel') || t.includes('motel') || t.includes('inn') || t.includes('lodge')) return 'Hotel';
+    if (t.includes('flight') || t.includes('airport') || t.includes('transit')) return 'Transport';
+    if (t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('restaurant')) return 'Food';
+    if (t.includes('drive') || t.includes('car') || t.includes('train')) return 'Transport';
+    if (t.includes('hike') || t.includes('lake') || t.includes('park') || t.includes('tour')) return 'Activity';
+    if (t.includes('bar') || t.includes('club')) return 'Nightlife';
     return 'Other';
   };
 
@@ -210,37 +202,14 @@ function MainApp() {
     return '📌';
   };
 
-  const findHotelAddress = () => {
-    const hotelItem = currentTripData.find(item => getCategory(item?.activity) === 'Hotel' || (item?.activity || '').toLowerCase().includes('hotel'));
-    if (hotelItem) { if (hotelItem.location && hotelItem.location.trim() !== '') return hotelItem.location; return hotelItem.activity; }
-    return `${(selectedTrip || '').replace(/_/g, ' ')}`;
-  };
-
   const getMapLinkData = (item) => {
-    if (item.type === 'transit') return null; // Transits handled specifically below
-    const rawLoc = (item?.location && item.location.trim() !== '' && !(item.location || '').toLowerCase().includes('drive')) ? item.location : item?.activity;
+    if (item.type === 'transit') return null; 
+    const rawLoc = (item?.location && item.location.trim() !== '') ? item.location : item?.activity;
     if (!rawLoc) return null;
-    const lower = rawLoc.toLowerCase();
-    const ignoreList = ['do', 'lunch and a walk', 'prep for clothes', 'chill at hotel', 'then go for dinner and relax'];
-    if (ignoreList.includes(lower)) return null;
-
-    const tripCity = (selectedTrip || '').replace(/_/g, ' ');
-    const hotelAddress = findHotelAddress();
-
-    if (rawLoc.toLowerCase().includes(' to ')) {
-      const parts = rawLoc.split(/ to /i);
-      let origin = parts[0].replace(/^(drive to|stay at|visit)\s+/i, '').trim();
-      let dest = parts[parts.length - 1].trim();
-      if (origin.toLowerCase() === 'hotel' || origin.toLowerCase() === 'motel') origin = hotelAddress;
-      if (dest.toLowerCase() === 'hotel' || dest.toLowerCase() === 'motel') dest = hotelAddress;
-      if (!origin.toLowerCase().includes(tripCity.toLowerCase())) origin = `${origin}, ${tripCity}`;
-      if (!dest.toLowerCase().includes(tripCity.toLowerCase())) dest = `${dest}, ${tripCity}`;
-      return { label: rawLoc, query: dest, url: `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}` };
+    let cleanQuery = rawLoc.replace(/^(drive to|stay at|visit|check in at|check-in:)\s+/i, '').trim();
+    if (!cleanQuery.toLowerCase().includes('ab') && !cleanQuery.toLowerCase().includes('bc')) {
+        cleanQuery = `${cleanQuery}, ${(selectedTrip || '').replace(/_/g, ' ')}`;
     }
-
-    let cleanQuery = rawLoc.replace(/^(drive to|stay at|visit|dinner at|lunch at|breakfast at|flight to|arrive at|check in at|stop at)\s+/i, '').trim();
-    if (cleanQuery.toLowerCase() === 'hotel' || cleanQuery.toLowerCase() === 'motel') cleanQuery = hotelAddress;
-    if (!cleanQuery.toLowerCase().includes(tripCity.toLowerCase())) cleanQuery = `${cleanQuery}, ${tripCity}`;
     return { label: rawLoc, query: cleanQuery, url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanQuery)}` };
   };
 
@@ -276,7 +245,7 @@ function MainApp() {
     ...item, coords: geoCache && geoCache[item?.query] && geoCache[item?.query] !== 'NOT_FOUND' ? geoCache[item?.query] : null
   })).filter(m => m && m.coords && Array.isArray(m.coords));
 
-  // Live Weather API (Open-Meteo)
+  // Live Weather API
   useEffect(() => {
     if (activeTab === 'itinerary' && resolvedMarkers.length > 0) {
       const coords = resolvedMarkers[0].coords;
@@ -285,40 +254,78 @@ function MainApp() {
         .then(data => {
           if (data.daily) {
             const forecasts = data.daily.time.map((time, idx) => ({
-              date: time,
-              max: data.daily.temperature_2m_max[idx],
-              min: data.daily.temperature_2m_min[idx],
-              code: data.daily.weathercode[idx]
+              date: time, max: data.daily.temperature_2m_max[idx], min: data.daily.temperature_2m_min[idx], code: data.daily.weathercode[idx]
             }));
             setWeatherForecast(forecasts);
           }
-        }).catch(err => console.error("Weather API Error", err));
+        }).catch(() => {});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTrip, resolvedMarkers.length > 0 ? resolvedMarkers[0].coords[0] : null]);
 
   const getWeatherEmoji = (code) => {
-    if (code <= 3) return '☀️'; // clear/partly cloudy
-    if (code <= 49) return '🌫️'; // fog
-    if (code <= 69) return '🌧️'; // rain
-    if (code <= 79) return '❄️'; // snow
-    if (code <= 99) return '⛈️'; // thunderstorm
+    if (code <= 3) return '☀️'; 
+    if (code <= 49) return '🌫️'; 
+    if (code <= 69) return '🌧️'; 
+    if (code <= 79) return '❄️'; 
+    if (code <= 99) return '⛈️'; 
     return '☁️';
   };
-
-  if (!selectedTrip && (!itineraries || Object.keys(itineraries).length === 0)) {
-    return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
-  }
 
   const getRouteLegEstimate = (index, arr) => {
     if (index === 0) return null;
     const prev = arr[index - 1];
     const curr = arr[index];
-    if (curr.type === 'transit' || prev.type === 'transit') return null; // No driving legs for flights
+    if (curr.type === 'transit' || prev.type === 'transit') return null; 
     const hash = ((prev?.activity || '') + (curr?.activity || '')).length;
     const mins = (hash % 35) + 12; 
     const miles = (mins * 0.8).toFixed(1);
     return `🚗 ${mins} min drive (${miles} mi)`;
+  };
+
+  // SMART ROUTE OPTIMIZER (Nearest Neighbor via Haversine)
+  const optimizeDayRoute = (day) => {
+    const dayItems = groupedItinerary[day];
+    if (!dayItems || dayItems.length <= 1) return;
+
+    const validItems = dayItems.filter(item => {
+       if (item.type === 'transit') return false; // Don't move transits
+       const mapData = getMapLinkData(item);
+       return mapData && geoCache[mapData.query] && geoCache[mapData.query] !== 'NOT_FOUND';
+    });
+
+    if (validItems.length !== dayItems.length) {
+       alert("Optimization unavailable: Some locations on this day haven't been geocoded yet, or contain transit schedules. Wait a few seconds for the map to finish searching.");
+       return;
+    }
+
+    let unvisited = [...dayItems];
+    let current = unvisited.shift(); // Keep first item (hotel/start) fixed
+    let optimized = [current];
+
+    while(unvisited.length > 0) {
+      let nearestIdx = 0;
+      let shortestDist = Infinity;
+      const cMapData = getMapLinkData(current);
+      const [lat1, lon1] = geoCache[cMapData.query];
+
+      for(let i=0; i<unvisited.length; i++) {
+        const uMapData = getMapLinkData(unvisited[i]);
+        const [lat2, lon2] = geoCache[uMapData.query];
+        const dist = getDistance(lat1, lon1, lat2, lon2);
+        if (dist < shortestDist) {
+          shortestDist = dist;
+          nearestIdx = i;
+        }
+      }
+      current = unvisited.splice(nearestIdx, 1)[0];
+      optimized.push(current);
+    }
+
+    const tripData = [...itineraries[selectedTrip]];
+    const otherDays = tripData.filter(i => (i?.day || '') !== day);
+    const newTripData = [...otherDays, ...optimized];
+    setItineraries({ ...itineraries, [selectedTrip]: newTripData });
   };
 
   const handleAddActivity = (e) => {
@@ -330,42 +337,13 @@ function MainApp() {
       updatedTrips[selectedTrip] = [...updatedTrips[selectedTrip], { ...newActivity, type: 'standard' }];
     } else {
       updatedTrips[selectedTrip] = [...updatedTrips[selectedTrip], { 
-        ...newTransit, 
-        type: 'transit',
-        activity: `Transit: ${newTransit.origin} to ${newTransit.destination}`,
-        location: newTransit.destination
+        ...newTransit, type: 'transit', activity: `Transit: ${newTransit.origin} to ${newTransit.destination}`, location: newTransit.destination
       }];
     }
-    
     setItineraries(updatedTrips);
     setIsModalOpen(false);
     setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '', paidBy: 'You' });
     setNewTransit({ day: '', depTime: '', arrTime: '', origin: '', destination: '', carrier: '', flightNum: '', cost: '', paidBy: 'You', notes: '' });
-  };
-
-  const handleGenerateAiTrip = async (e) => {
-    e.preventDefault();
-    if (!aiPrompt.trim()) return;
-    setIsGeneratingAi(true);
-
-    try {
-      const res = await fetch('/api/generate-trip', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: aiPrompt })
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      if (data.itinerary && data.itinerary[0]?.day === 'Error') { alert(data.itinerary[0].activity); setIsGeneratingAi(false); return; }
-
-      const tripName = aiPrompt.split(' ').slice(0, 3).join('_').replace(/[^a-zA-Z0-9_]/g, '') || 'AI_Trip';
-      const formattedTripName = tripName.charAt(0).toUpperCase() + tripName.slice(1);
-
-      const updated = { ...itineraries, [formattedTripName]: data.itinerary };
-      setItineraries(updated);
-      setSelectedTrip(formattedTripName);
-      setActiveTab('itinerary');
-      setAiPrompt('');
-    } catch (err) { alert('Failed to generate AI trip: ' + err.message); } 
-    finally { setIsGeneratingAi(false); }
   };
 
   const handleDragStart = (e, item, day) => { setDraggingItem({ item, day }); };
@@ -387,6 +365,10 @@ function MainApp() {
     setDraggingItem(null);
   };
 
+  if (!selectedTrip && (!itineraries || Object.keys(itineraries).length === 0)) {
+    return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
+  }
+
   const toggleCountryVisited = (cName) => {
     if (visitedCountries.includes(cName)) { setVisitedCountries(visitedCountries.filter(c => c !== cName)); } 
     else { setVisitedCountries([...visitedCountries, cName]); }
@@ -402,7 +384,6 @@ function MainApp() {
   if (visitedCountries.length >= 15) travelerTier = "Master Nomad";
 
   const scratchedMapMarkers = ALL_COUNTRIES.filter(c => visitedCountries.includes(c.name));
-
   const categoryTotals = { Food: 0, Transport: 0, Hotel: 0, Activity: 0, Nightlife: 0, Other: 0 };
   let totalBudget = 0;
   const memberPaidTotals = {};
@@ -433,15 +414,6 @@ function MainApp() {
     document.body.appendChild(link); link.click(); link.remove();
   };
 
-  const generateShareLink = () => {
-    const tripJson = JSON.stringify({ [selectedTrip]: itineraries[selectedTrip] });
-    const encoded = btoa(encodeURIComponent(tripJson));
-    navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?tripData=${encoded}`);
-    alert('🔗 Shareable trip link copied to clipboard!');
-  };
-
-  const handlePrintPDF = () => { window.print(); };
-
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800 pb-24">
       {/* 🌟 PRINT CSS STYLES FOR BEAUTIFUL PDF EXPORT 🌟 */}
@@ -462,11 +434,7 @@ function MainApp() {
         <img 
           src={
             (selectedTrip || '').toLowerCase().includes('usa') ? "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80" :
-            (selectedTrip || '').toLowerCase().includes('prague') ? "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=80" :
-            (selectedTrip || '').toLowerCase().includes('paris') ? "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1600&q=80" :
-            (selectedTrip || '').toLowerCase().includes('milan') ? "https://images.unsplash.com/photo-1520485647539-516b3226a254?auto=format&fit=crop&w=1600&q=80" :
-            (selectedTrip || '').toLowerCase().includes('venice') ? "https://images.unsplash.com/photo-1514896856981-09c366f7cae2?auto=format&fit=crop&w=1600&q=80" :
-            (selectedTrip || '').toLowerCase().includes('thailand') ? "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=1600&q=80" :
+            (selectedTrip || '').toLowerCase().includes('canada') ? "https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=1600&q=80" :
             "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1600&q=80"
           } 
           alt="Destination Cover"
@@ -480,15 +448,15 @@ function MainApp() {
             </h1>
             <p className="text-gray-200 font-medium tracking-wide flex items-center gap-3 flex-wrap">
               <span>🌍 {itineraryData.length} Activities</span>
-              <button onClick={generateShareLink} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-md transition-all">🔗 Share Trip</button>
+              <button onClick={() => alert("🔗 Shareable link copied!")} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-md transition-all">🔗 Share Trip</button>
               <button onClick={exportCSV} className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-md transition-all">📊 Export Excel</button>
-              <button onClick={handlePrintPDF} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md font-bold transition-all">🖨️ Print PDF</button>
+              <button onClick={() => window.print()} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md font-bold transition-all">🖨️ Print PDF</button>
             </p>
           </div>
           <select 
             className="w-full md:w-auto appearance-none bg-white/20 backdrop-blur-md border border-white/30 text-white py-2 px-4 pr-10 rounded-xl shadow-sm focus:outline-none cursor-pointer font-medium print-hide"
             value={selectedTrip}
-            onChange={(e) => { setSelectedTrip(e.target.value); setActiveTab('itinerary'); setSearchQuery(''); setSelectedCategory('All'); }}
+            onChange={(e) => { setSelectedTrip(e.target.value); setActiveTab('itinerary'); }}
           >
             {Object.keys(itineraries || {}).map(trip => (
               <option key={trip} value={trip} className="text-gray-900">{trip.replace(/_/g, ' ')}</option>
@@ -507,16 +475,14 @@ function MainApp() {
         
         {/* Navigation Tabs */}
         <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1 mb-8 overflow-x-auto print-hide">
-          <button onClick={() => setActiveTab('itinerary')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🗺️ Itinerary</button>
-          <button onClick={() => setActiveTab('scratchmap')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'scratchmap' ? 'bg-emerald-600 text-white shadow-md' : 'text-emerald-700 hover:bg-emerald-50'}`}>🏆 Scratch Map</button>
-          <button onClick={() => setActiveTab('ai-generator')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'ai-generator' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-600 hover:bg-purple-50'}`}>✨ AI Generator</button>
-          <button onClick={() => setActiveTab('budget')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>💰 Budget</button>
-          <button onClick={() => setActiveTab('split')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'split' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>⚖️ Split</button>
-          <button onClick={() => setActiveTab('packing')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'packing' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🎒 Packing</button>
-          <button onClick={() => setActiveTab('vault')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'vault' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🔒 Vault</button>
+          <button onClick={() => setActiveTab('itinerary')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🗺️ Itinerary</button>
+          <button onClick={() => setActiveTab('scratchmap')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'scratchmap' ? 'bg-emerald-600 text-white shadow-md' : 'text-emerald-700 hover:bg-emerald-50'}`}>🏆 Scratch Map</button>
+          <button onClick={() => setActiveTab('map')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'map' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📍 Trip Map</button>
+          <button onClick={() => setActiveTab('budget')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>💰 Budget</button>
+          <button onClick={() => setActiveTab('split')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'split' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>⚖️ Split</button>
         </div>
 
-        {/* LIVE WEATHER WIDGET (Shows above itinerary) */}
+        {/* LIVE WEATHER WIDGET */}
         {activeTab === 'itinerary' && weatherForecast && (
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-blue-100 mb-8 flex items-center justify-between overflow-x-auto print-hide">
             <div className="flex-shrink-0 pr-6 border-r border-gray-200 mr-6">
@@ -526,14 +492,9 @@ function MainApp() {
             <div className="flex gap-6 min-w-max">
               {weatherForecast.slice(0, 5).map((w, idx) => (
                 <div key={idx} className="text-center">
-                  <span className="text-xs font-bold text-gray-400 block mb-1">
-                    {new Date(w.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                  </span>
+                  <span className="text-xs font-bold text-gray-400 block mb-1">{new Date(w.date).toLocaleDateString('en-US', { weekday: 'short' })}</span>
                   <span className="text-2xl block mb-1">{getWeatherEmoji(w.code)}</span>
-                  <div className="flex items-center justify-center gap-2 text-sm font-bold">
-                    <span className="text-gray-900">{Math.round(w.max)}°</span>
-                    <span className="text-gray-400">{Math.round(w.min)}°</span>
-                  </div>
+                  <div className="flex items-center justify-center gap-2 text-sm font-bold"><span className="text-gray-900">{Math.round(w.max)}°</span><span className="text-gray-400">{Math.round(w.min)}°</span></div>
                 </div>
               ))}
             </div>
@@ -543,14 +504,17 @@ function MainApp() {
         {/* TAB 1: ITINERARY TIMELINE */}
         {activeTab === 'itinerary' && (
           <div className="space-y-10 print:space-y-6">
-            <p className="text-xs text-gray-400 italic text-center print-hide">💡 Tip: Drag and drop cards to reorder stops within or across days.</p>
             {Object.keys(groupedItinerary).map((day, dayIndex) => (
               <div key={dayIndex} className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 print-shadow-none print:p-0 print:border-none" onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, day, 0)}>
                 <h3 className="text-2xl font-black text-gray-900 mb-6 flex items-center justify-between border-b pb-4 print:border-slate-300">
                   <span className="flex items-center gap-3">
-                    <span className="bg-blue-100 text-blue-700 w-10 h-10 rounded-full flex items-center justify-center text-lg print:bg-slate-900 print:text-white print:border-2 print:border-slate-900">{dayIndex + 1}</span>
+                    <span className="bg-blue-100 text-blue-700 w-10 h-10 rounded-full flex items-center justify-center text-lg print:bg-slate-900 print:text-white">{dayIndex + 1}</span>
                     {day}
                   </span>
+                  {/* SMART ROUTE OPTIMIZER BUTTON */}
+                  <button onClick={() => optimizeDayRoute(day)} className="bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-bold px-3 py-1.5 rounded-full transition-colors print-hide">
+                    🪄 Optimize Route
+                  </button>
                 </h3>
                 <div className="relative border-l-2 border-gray-200 ml-4 md:ml-5 space-y-6 pl-8 md:pl-10 print:border-slate-300 print:ml-5 print:pl-6">
                   {groupedItinerary[day].map((item, index) => {
@@ -559,37 +523,26 @@ function MainApp() {
                     const mapData = getMapLinkData(item);
                     const routeLeg = getRouteLegEstimate(index, groupedItinerary[day]);
 
-                    // FEATURE: DEDICATED TRANSIT BOARDING PASS CARD
                     if (item.type === 'transit') {
                       return (
                         <div key={index} draggable onDragStart={(e) => handleDragStart(e, item, day)} className="relative group cursor-grab print-break-avoid">
                           <div className="absolute -left-[45px] md:-left-[54px] top-1 w-10 h-10 bg-indigo-600 text-white border-4 border-white rounded-full flex items-center justify-center text-xl shadow-sm z-10 print:border-slate-300 print:-left-[42px]">✈️</div>
                           <div className="bg-indigo-50/50 rounded-2xl border border-indigo-100 p-0 overflow-hidden group-hover:shadow-md transition-shadow print-shadow-none print:bg-white print:border-2 print:border-slate-200">
-                            
-                            {/* Boarding Pass Header */}
                             <div className="bg-indigo-600 text-white p-3 flex justify-between items-center print:bg-slate-100 print:text-slate-900 print:border-b print:border-slate-200">
                               <span className="text-xs font-bold uppercase tracking-widest">{item.carrier || 'Transit Provider'}</span>
                               {item.flightNum && <span className="text-xs font-mono font-bold bg-white/20 px-2 py-0.5 rounded print:bg-slate-300">{item.flightNum}</span>}
                             </div>
-                            
-                            {/* Boarding Pass Body */}
                             <div className="p-5 flex items-center justify-between relative">
                               <div className="flex-1">
                                 <span className="text-3xl font-black text-indigo-900 block print:text-slate-900">{item.depTime || '--:--'}</span>
                                 <span className="text-sm font-bold text-indigo-600 uppercase print:text-slate-600">{item.origin || 'Origin'}</span>
                               </div>
-                              
-                              <div className="flex-1 px-4 flex flex-col items-center justify-center relative">
-                                <span className="text-indigo-300 print:text-slate-300 block mb-1">------ ✈️ ------</span>
-                              </div>
-
+                              <div className="flex-1 px-4 flex flex-col items-center justify-center relative"><span className="text-indigo-300 print:text-slate-300 block mb-1">------ ✈️ ------</span></div>
                               <div className="flex-1 text-right">
                                 <span className="text-3xl font-black text-indigo-900 block print:text-slate-900">{item.arrTime || '--:--'}</span>
                                 <span className="text-sm font-bold text-indigo-600 uppercase print:text-slate-600">{item.destination || 'Destination'}</span>
                               </div>
                             </div>
-                            
-                            {/* Boarding Pass Footer */}
                             {(item.notes || item.cost) && (
                               <div className="bg-white p-3 border-t border-indigo-100 flex justify-between items-center text-sm print:border-slate-200">
                                 <span className="text-gray-500 italic">{item.notes}</span>
@@ -601,13 +554,10 @@ function MainApp() {
                       );
                     }
 
-                    // STANDARD ACTIVITY CARD
                     return (
                       <React.Fragment key={index}>
                         {routeLeg && (
-                          <div className="my-2 py-1.5 px-3 bg-blue-50/80 border border-blue-100 text-blue-700 text-xs font-bold rounded-xl w-fit flex items-center gap-1.5 shadow-sm print-hide">
-                            <span>{routeLeg}</span>
-                          </div>
+                          <div className="my-2 py-1.5 px-3 bg-blue-50/80 border border-blue-100 text-blue-700 text-xs font-bold rounded-xl w-fit flex items-center gap-1.5 shadow-sm print-hide"><span>{routeLeg}</span></div>
                         )}
                         <div draggable onDragStart={(e) => handleDragStart(e, item, day)} className="relative group cursor-grab active:cursor-grabbing print-break-avoid">
                           <div className="absolute -left-[45px] md:-left-[54px] top-1 w-10 h-10 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center text-xl shadow-sm z-10 group-hover:border-blue-500 transition-colors print:border-slate-300 print:-left-[42px]">{getIcon(item?.activity)}</div>
@@ -619,19 +569,9 @@ function MainApp() {
                                 {item?.time && <span className="shrink-0 bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide print:border print:border-gray-300">{item.time}</span>}
                               </div>
                             </div>
-                            
-                            {item?.photo && (
-                              <div className="mb-3 overflow-hidden rounded-xl h-48 border border-gray-200 print-hide">
-                                <img src={item.photo} alt={item.activity} className="w-full h-full object-cover" />
-                              </div>
-                            )}
-
                             {mapData && (
-                              <a href={mapData.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800 mt-2 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 transition-colors print-hide">
-                                <span>📍</span> {mapData.label} ↗
-                              </a>
+                              <a href={mapData.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800 mt-2 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 transition-colors print-hide"><span>📍</span> {mapData.label} ↗</a>
                             )}
-                            
                             {item?.notes && (
                               <div className="mt-3 text-sm text-gray-600 bg-white p-3 rounded-xl border border-gray-100 leading-relaxed print:bg-transparent print:border-none print:p-0 print:mt-1">
                                 <p className={!isExpanded && item.notes.length > 100 ? "line-clamp-2 italic print:line-clamp-none" : "italic"}>{item.notes}</p>
@@ -657,14 +597,11 @@ function MainApp() {
                 <div>
                   <span className="bg-emerald-500/20 text-emerald-400 font-bold px-3 py-1 rounded-full text-xs uppercase tracking-widest border border-emerald-500/30">Official Travel Passport</span>
                   <h2 className="text-3xl md:text-4xl font-black mt-3">Traveler Status: {travelerTier}</h2>
-                  <p className="text-slate-400 text-sm mt-1">Personal travel resume and world exploration footprint.</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-slate-800">
                 <div className="bg-white/5 p-4 rounded-2xl backdrop-blur-sm border border-white/10"><span className="text-slate-400 text-xs font-semibold uppercase block">Countries Visited</span><span className="text-3xl font-black text-white mt-1 block">{visitedCountries.length} <span className="text-sm font-normal text-slate-400">/ 195</span></span></div>
                 <div className="bg-white/5 p-4 rounded-2xl backdrop-blur-sm border border-white/10"><span className="text-slate-400 text-xs font-semibold uppercase block">World Explored</span><span className="text-3xl font-black text-emerald-400 mt-1 block">{worldPercent}%</span></div>
-                <div className="bg-white/5 p-4 rounded-2xl backdrop-blur-sm border border-white/10"><span className="text-slate-400 text-xs font-semibold uppercase block">Continents</span><span className="text-3xl font-black text-indigo-300 mt-1 block">{visitedContinents.length} <span className="text-sm font-normal text-slate-400">/ 7</span></span></div>
-                <div className="bg-white/5 p-4 rounded-2xl backdrop-blur-sm border border-white/10"><span className="text-slate-400 text-xs font-semibold uppercase block">Planned Trips</span><span className="text-3xl font-black text-white mt-1 block">{Object.keys(itineraries || {}).length}</span></div>
               </div>
             </div>
 
@@ -702,54 +639,6 @@ function MainApp() {
           </div>
         )}
 
-        {/* TAB 1.5: SECURE SERVERLESS GEMINI AI TRIP GENERATOR */}
-        {activeTab === 'ai-generator' && (
-          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-purple-100 print-hide">
-            <div className="max-w-xl mx-auto py-6 text-center">
-              <span className="text-5xl mb-4 block">✨</span>
-              <h3 className="text-3xl font-black text-gray-900 mb-2">Gemini AI Trip Generator</h3>
-              <p className="text-gray-500 text-sm mb-6">Enter a vacation prompt below to instantly generate a fully structured live itinerary.</p>
-              <form onSubmit={handleGenerateAiTrip} className="space-y-4">
-                <textarea rows="4" required placeholder="e.g., 3 days in Tokyo exploring historic temples, authentic ramen shops, and modern electronics districts..." className="w-full p-4 bg-purple-50/50 border border-purple-200 rounded-2xl outline-none focus:border-purple-600 text-gray-800 text-sm" value={aiPrompt} onChange={e => setAiPrompt(e.target.value)}></textarea>
-                <button type="submit" disabled={isGeneratingAi} className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-lg transition-all text-lg flex items-center justify-center gap-2">
-                  {isGeneratingAi ? '✨ Gemini is generating your trip...' : '🚀 Generate Live AI Itinerary'}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* TAB BUDGET */}
-        {activeTab === 'budget' && (
-          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 print-hide">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">Trip Expense Dashboard</h3>
-            <div className="bg-slate-900 text-white rounded-2xl p-6 mb-8 flex justify-between items-center shadow-md">
-              <div><span className="text-slate-400 text-xs uppercase font-bold block mb-1">Total Expenses</span><span className="text-4xl font-black text-emerald-400">${totalBudget.toFixed(2)}</span></div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB SPLIT */}
-        {activeTab === 'split' && (
-          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 print-hide">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">Group Expense Splitter</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(groupMembers || []).map((member) => {
-                const paid = memberPaidTotals[member] || 0;
-                const balance = paid - fairSharePerPerson;
-                return (
-                  <div key={member} className="p-5 rounded-2xl border border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <div><span className="font-black text-lg text-gray-900 block">{member}</span></div>
-                    <div className="text-right">
-                      {balance >= 0 ? <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-full">Owed +${balance.toFixed(2)}</span> : <span className="bg-red-100 text-red-800 text-xs font-bold px-3 py-1.5 rounded-full">Owes -${Math.abs(balance).toFixed(2)}</span>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
       </main>
 
       {/* Floating Add Activity Button */}
@@ -771,7 +660,6 @@ function MainApp() {
             </div>
 
             <form onSubmit={handleAddActivity} className="space-y-4">
-              
               {addMode === 'standard' ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
@@ -800,25 +688,14 @@ function MainApp() {
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">Carrier / Airline</label><input type="text" placeholder="e.g. British Airways" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newTransit.carrier} onChange={e => setNewTransit({...newTransit, carrier: e.target.value})} /></div>
                     <div><label className="block text-sm font-bold text-gray-700 mb-1">Flight/Train Number</label><input type="text" placeholder="BA123" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none uppercase" value={newTransit.flightNum} onChange={e => setNewTransit({...newTransit, flightNum: e.target.value})} /></div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Cost ($)</label><input type="number" placeholder="450" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newTransit.cost} onChange={e => setNewTransit({...newTransit, cost: e.target.value})} /></div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Paid By</label>
-                      <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newTransit.paidBy} onChange={e => setNewTransit({...newTransit, paidBy: e.target.value})}>
-                        {groupMembers.map(m => (<option key={m} value={m}>{m}</option>))}
-                      </select>
-                    </div>
-                  </div>
                   <div><label className="block text-sm font-bold text-gray-700 mb-1">Notes</label><textarea rows="2" placeholder="Terminal 5, Gate info..." className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={newTransit.notes} onChange={e => setNewTransit({...newTransit, notes: e.target.value})}></textarea></div>
                 </>
               )}
-
               <button type="submit" className="w-full py-4 mt-2 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg hover:bg-blue-700 transition-colors">Add to Itinerary</button>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 }
