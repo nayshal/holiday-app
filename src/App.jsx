@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { supabase } from './supabaseClient'; // 👈 Your new Cloud DB Connection
+import { supabase } from './supabaseClient';
 
 // 1. GLOBAL ERROR BOUNDARY
 class ErrorBoundary extends React.Component {
@@ -59,7 +59,7 @@ function MainApp() {
 
   // Cloud Sync States
   const [isCloudLoaded, setIsCloudLoaded] = useState(false);
-  const [syncStatus, setSyncStatus] = useState('Loading...'); // 'Loading...', 'Synced', 'Syncing...'
+  const [syncStatus, setSyncStatus] = useState('Loading...'); 
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -93,14 +93,18 @@ function MainApp() {
   const [countrySearch, setCountrySearch] = useState('');
   const [weatherForecast, setWeatherForecast] = useState(null);
 
-  // --- CLOUD INIT ---
+  // --- CLOUD INIT WITH SMART EXCEL TAB MERGE ---
   useEffect(() => {
     const fetchCloudData = async () => {
       try {
         const { data, error } = await supabase.from('travel_state').select('payload').eq('id', 'main_trip').single();
+        
+        let currentCloudTrips = {};
+
         if (data && data.payload && Object.keys(data.payload).length > 0) {
           const p = data.payload;
           if (p.itineraries) {
+            currentCloudTrips = p.itineraries;
             setItineraries(p.itineraries);
             if (!selectedTrip && Object.keys(p.itineraries).length > 0) setSelectedTrip(Object.keys(p.itineraries)[0]);
           }
@@ -112,9 +116,25 @@ function MainApp() {
         } else {
           // Fallback if cloud is completely empty
           const recoveredTrips = { "Canada_Road_Trip": [ { day: 'Sept 20', time: '08:00 AM', activity: 'Train to Vancouver', type: 'transit', carrier: 'Amtrak', origin: 'Seattle', destination: 'Vancouver', cost: '65', paidBy: 'You' }, { day: 'Sept 22', time: '03:00 PM', activity: 'Check-in: Pocaterra Inn', location: 'Canmore, AB', type: 'standard', cost: '200', paidBy: 'You' } ] };
+          currentCloudTrips = recoveredTrips;
           setItineraries(recoveredTrips);
           setSelectedTrip('Canada_Road_Trip');
         }
+
+        // ONE-TIME IMPORT: If the cloud only has Canada, pull the master JSON to restore all Excel tabs!
+        if (Object.keys(currentCloudTrips).length <= 1) {
+           fetch('/master_itinerary.json')
+            .then(res => res.json())
+            .then(masterData => {
+              if (masterData) {
+                const merged = { ...masterData, ...currentCloudTrips };
+                setItineraries(merged);
+                setSelectedTrip(Object.keys(merged)[0]);
+              }
+            })
+            .catch(err => console.log("No master JSON found locally, proceeding with Canada only.", err));
+        }
+
       } catch (err) {
         console.error("Cloud connection failed. Falling back.", err);
       } finally {
@@ -141,16 +161,12 @@ function MainApp() {
         setSyncStatus('⚠️ Sync Error');
         console.error(err);
       }
-    }, 1500); // Waits 1.5 seconds after you stop typing/dragging to save to DB
+    }, 1500); 
 
     return () => clearTimeout(delayDebounceFn);
   }, [itineraries, packingItems, journalEntries, vaultDocs, visitedCountries, groupMembers, isCloudLoaded]);
 
-  // Save GeoCache locally so we don't spam the cloud DB with coordinates
-  useEffect(() => {
-    localStorage.setItem('travelGeoCache', JSON.stringify(geoCache || {}));
-  }, [geoCache]);
-
+  useEffect(() => { localStorage.setItem('travelGeoCache', JSON.stringify(geoCache || {})); }, [geoCache]);
 
   let currentTripData = Array.isArray(itineraries?.[selectedTrip]) ? itineraries[selectedTrip].filter(item => item !== null && typeof item === 'object') : [];
 
