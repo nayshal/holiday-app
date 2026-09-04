@@ -35,13 +35,21 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Custom Leaflet Pin
+// Custom Leaflet Pins
 const customPinIcon = L.divIcon({
   html: `<div style="background-color: #2563eb; color: white; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 16px;">📍</div>`,
   className: 'custom-leaflet-icon',
   iconSize: [32, 32],
   iconAnchor: [16, 32],
   popupAnchor: [0, -32]
+});
+
+const worldScratchPinIcon = L.divIcon({
+  html: `<div style="background-color: #059669; color: white; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; border-radius: 50%; border: 2px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.35); font-size: 14px;">✨</div>`,
+  className: 'scratch-pin-icon',
+  iconSize: [28, 28],
+  iconAnchor: [14, 28],
+  popupAnchor: [0, -28]
 });
 
 // Safe Local Storage Parser
@@ -59,11 +67,43 @@ const getLocal = (key, fallback) => {
   }
 };
 
+// WORLD COUNTRY DIRECTORY FOR SCRATCH MAP
+const ALL_COUNTRIES = [
+  { name: 'United States', code: 'US', continent: 'North America', coords: [37.0902, -95.7129] },
+  { name: 'Canada', code: 'CA', continent: 'North America', coords: [56.1304, -106.3468] },
+  { name: 'Mexico', code: 'MX', continent: 'North America', coords: [23.6345, -102.5528] },
+  { name: 'United Kingdom', code: 'GB', continent: 'Europe', coords: [55.3781, -3.4360] },
+  { name: 'France', code: 'FR', continent: 'Europe', coords: [46.2276, 2.2137] },
+  { name: 'Italy', code: 'IT', continent: 'Europe', coords: [41.8719, 12.5674] },
+  { name: 'Spain', code: 'ES', continent: 'Europe', coords: [40.4637, -3.7492] },
+  { name: 'Germany', code: 'DE', continent: 'Europe', coords: [51.1657, 10.4515] },
+  { name: 'Czech Republic', code: 'CZ', continent: 'Europe', coords: [49.8175, 15.4730] },
+  { name: 'Croatia', code: 'HR', continent: 'Europe', coords: [45.1, 15.2] },
+  { name: 'Portugal', code: 'PT', continent: 'Europe', coords: [39.3999, -8.2245] },
+  { name: 'Greece', code: 'GR', continent: 'Europe', coords: [39.0742, 21.8243] },
+  { name: 'Switzerland', code: 'CH', continent: 'Europe', coords: [46.8182, 8.2275] },
+  { name: 'Austria', code: 'AT', continent: 'Europe', coords: [47.5162, 14.5501] },
+  { name: 'Netherlands', code: 'NL', continent: 'Europe', coords: [52.1326, 5.2913] },
+  { name: 'Thailand', code: 'TH', continent: 'Asia', coords: [15.8700, 100.9925] },
+  { name: 'Japan', code: 'JP', continent: 'Asia', coords: [36.2048, 138.2529] },
+  { name: 'Indonesia', code: 'ID', continent: 'Asia', coords: [-0.7893, 113.9213] },
+  { name: 'United Arab Emirates', code: 'AE', continent: 'Asia', coords: [23.4241, 53.8478] },
+  { name: 'Singapore', code: 'SG', continent: 'Asia', coords: [1.3521, 103.8198] },
+  { name: 'Australia', code: 'AU', continent: 'Oceania', coords: [-25.2744, 133.7751] },
+  { name: 'New Zealand', code: 'NZ', continent: 'Oceania', coords: [-40.9006, 174.8860] },
+  { name: 'Egypt', code: 'EG', continent: 'Africa', coords: [26.8206, 30.8025] },
+  { name: 'South Africa', code: 'ZA', continent: 'Africa', coords: [-30.5595, 22.9375] },
+  { name: 'Morocco', code: 'MA', continent: 'Africa', coords: [31.7917, -7.0926] },
+  { name: 'Brazil', code: 'BR', continent: 'South America', coords: [-14.2350, -51.9253] },
+  { name: 'Argentina', code: 'AR', continent: 'South America', coords: [-38.4161, -63.6167] },
+  { name: 'Peru', code: 'PE', continent: 'South America', coords: [-9.1900, -75.0152] }
+];
+
 function MainApp() {
   // --- ALL STATE HOOKS ---
   const [itineraries, setItineraries] = useState({});
   const [selectedTrip, setSelectedTrip] = useState('');
-  const [activeTab, setActiveTab] = useState('itinerary'); 
+  const [activeTab, setActiveTab] = useState('itinerary'); // 'itinerary', 'ai-generator', 'map', 'scratchmap', 'budget', 'split', 'packing', 'journal', 'vault', 'todo'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedNotes, setExpandedNotes] = useState({});
@@ -94,6 +134,10 @@ function MainApp() {
 
   const [geoCache, setGeoCache] = useState(getLocal('travelGeoCache', {}));
   const [draggingItem, setDraggingItem] = useState(null);
+
+  // Scratch map custom toggles
+  const [visitedCountries, setVisitedCountries] = useState(getLocal('travelVisitedCountries', ['United States', 'United Kingdom', 'France', 'Italy']));
+  const [countrySearch, setCountrySearch] = useState('');
 
   // --- ALL USE-EFFECT HOOKS ---
   useEffect(() => {
@@ -148,7 +192,31 @@ function MainApp() {
     localStorage.setItem('travelPackingItems', JSON.stringify(packingItems || []));
     localStorage.setItem('travelJournalEntries', JSON.stringify(journalEntries || []));
     localStorage.setItem('travelGeoCache', JSON.stringify(geoCache || {}));
-  }, [vaultDocs, packingItems, journalEntries, geoCache]);
+    localStorage.setItem('travelVisitedCountries', JSON.stringify(visitedCountries || []));
+  }, [vaultDocs, packingItems, journalEntries, geoCache, visitedCountries]);
+
+  // Auto-detect countries from trip names
+  useEffect(() => {
+    if (!itineraries) return;
+    const detected = new Set(visitedCountries);
+    Object.keys(itineraries).forEach(tripKey => {
+      const lower = tripKey.toLowerCase();
+      if (lower.includes('usa') || lower.includes('america')) detected.add('United States');
+      if (lower.includes('uk') || lower.includes('london')) detected.add('United Kingdom');
+      if (lower.includes('paris') || lower.includes('france')) detected.add('France');
+      if (lower.includes('italy') || lower.includes('milan') || lower.includes('venice') || lower.includes('rome')) detected.add('Italy');
+      if (lower.includes('prague') || lower.includes('czech')) detected.add('Czech Republic');
+      if (lower.includes('thailand') || lower.includes('bangkok')) detected.add('Thailand');
+      if (lower.includes('croatia') || lower.includes('split')) detected.add('Croatia');
+      if (lower.includes('spain') || lower.includes('barcelona')) detected.add('Spain');
+      if (lower.includes('japan') || lower.includes('tokyo')) detected.add('Japan');
+      if (lower.includes('canada') || lower.includes('banff') || lower.includes('vancouver')) detected.add('Canada');
+    });
+    if (detected.size !== visitedCountries.length) {
+      setVisitedCountries([...detected]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itineraries]);
 
   // --- DATA COMPUTATIONS ---
   let currentTripData = Array.isArray(itineraries?.[selectedTrip]) 
@@ -256,7 +324,7 @@ function MainApp() {
 
   const mapItems = itineraryData.map(item => getMapLinkData(item)).filter(Boolean);
 
-  // --- GEOCODING USE-EFFECT (MUST BE BEFORE EARLY RETURN) ---
+  // --- GEOCODING USE-EFFECT ---
   useEffect(() => {
     if (activeTab !== 'map') return;
     
@@ -290,8 +358,7 @@ function MainApp() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, JSON.stringify(mapItems.map(m => m?.query))]);
 
-  // --- EARLY RETURN FOR LOADING STATE ---
-  // (Safely placed *after* all hooks!)
+  // --- LOADING GUARD ---
   if (!selectedTrip && (!itineraries || Object.keys(itineraries).length === 0)) {
     return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-semibold animate-pulse">✈️ Building your journey...</div>;
   }
@@ -395,6 +462,27 @@ function MainApp() {
     setDraggingItem(null);
   };
 
+  // Scratch Map Calculations
+  const toggleCountryVisited = (cName) => {
+    if (visitedCountries.includes(cName)) {
+      setVisitedCountries(visitedCountries.filter(c => c !== cName));
+    } else {
+      setVisitedCountries([...visitedCountries, cName]);
+    }
+  };
+
+  const totalWorldCountries = 195;
+  const worldPercent = ((visitedCountries.length / totalWorldCountries) * 100).toFixed(1);
+  const visitedContinents = [...new Set(ALL_COUNTRIES.filter(c => visitedCountries.includes(c.name)).map(c => c.continent))];
+  
+  let travelerTier = "Weekend Wanderer";
+  if (visitedCountries.length >= 3) travelerTier = "Globe Trotter";
+  if (visitedCountries.length >= 7) travelerTier = "Seasoned Explorer";
+  if (visitedCountries.length >= 15) travelerTier = "Master Nomad";
+
+  const scratchedMapMarkers = ALL_COUNTRIES.filter(c => visitedCountries.includes(c.name));
+
+  // Budget calculations
   const categoryTotals = { Food: 0, Transport: 0, Hotel: 0, Activity: 0, Nightlife: 0, Other: 0 };
   let totalBudget = 0;
   const memberPaidTotals = {};
@@ -444,7 +532,7 @@ function MainApp() {
     const encoded = btoa(encodeURIComponent(tripJson));
     const shareUrl = `${window.location.origin}${window.location.pathname}?tripData=${encoded}`;
     navigator.clipboard.writeText(shareUrl);
-    alert('🔗 Shareable link copied to clipboard!');
+    alert('🔗 Shareable trip link copied to clipboard!');
   };
 
   const handlePrintPDF = () => {
@@ -477,13 +565,13 @@ function MainApp() {
             </h1>
             <p className="text-gray-200 font-medium tracking-wide flex items-center gap-3 flex-wrap">
               <span>🌍 {itineraryData.length} Activities</span>
-              <button onClick={generateShareLink} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-md transition-all">🔗 Share Trip</button>
+              <button onClick={generateShareLink} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-md transition-all">🔗 Send Itinerary Link</button>
               <button onClick={exportCSV} className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-md transition-all">📊 Export Excel</button>
               <button onClick={handlePrintPDF} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md font-bold transition-all">🖨️ Print PDF</button>
             </p>
           </div>
           <select 
-            className="w-full md:w-auto appearance-none bg-white/20 backdrop-blur-md border border-white/30 text-white py-2 px-4 pr-10 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer font-medium"
+            className="w-full md:w-auto appearance-none bg-white/20 backdrop-blur-md border border-white/30 text-white py-2 px-4 pr-10 rounded-xl shadow-sm focus:outline-none cursor-pointer font-medium"
             value={selectedTrip}
             onChange={(e) => {
               setSelectedTrip(e.target.value);
@@ -539,14 +627,14 @@ function MainApp() {
         {/* Navigation Tabs */}
         <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1 mb-8 overflow-x-auto print:hidden">
           <button onClick={() => setActiveTab('itinerary')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🗺️ Itinerary</button>
+          <button onClick={() => setActiveTab('scratchmap')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'scratchmap' ? 'bg-emerald-600 text-white shadow-md' : 'text-emerald-700 hover:bg-emerald-50'}`}>🏆 Scratch Map & Stats</button>
+          <button onClick={() => setActiveTab('map')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'map' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📍 Trip Map</button>
           <button onClick={() => setActiveTab('ai-generator')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'ai-generator' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-600 hover:bg-purple-50'}`}>✨ AI Generator</button>
-          <button onClick={() => setActiveTab('map')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'map' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📍 Map</button>
           <button onClick={() => setActiveTab('budget')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>💰 Budget</button>
           <button onClick={() => setActiveTab('split')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'split' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>⚖️ Split</button>
           <button onClick={() => setActiveTab('packing')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'packing' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🎒 Packing</button>
           <button onClick={() => setActiveTab('journal')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'journal' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📸 Journal</button>
           <button onClick={() => setActiveTab('vault')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${activeTab === 'vault' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>🔒 Vault</button>
-          <button onClick={() => setActiveTab('todo')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 flex justify-center items-center gap-1 ${activeTab === 'todo' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📝 To-Dos {todoData.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{todoData.length}</span>}</button>
         </div>
 
         {/* TAB 1: ITINERARY TIMELINE */}
@@ -600,7 +688,8 @@ function MainApp() {
                             {item?.notes && (
                               <div className="mt-3 text-sm text-gray-600 bg-white p-3 rounded-xl border border-gray-100 leading-relaxed">
                                 <p className={!isExpanded && isLongNote ? "line-clamp-2 italic" : "italic"}>{item.notes}</p>
-                                {isLongNote && (<button onClick={() => toggleNote(uniqueKey)} className="text-xs font-bold text-blue-600 hover:underline mt-1 block">{isExpanded ? 'Show less ▲' : 'Read more ▼'}</button>)}
+                                {isLongNote && (<button onClick={() => toggleNote(uniqueKey)} className="text-xs font-bold text-blue-600 hover:underline mt-1 block">{isExpanded ? 'Show less ▲' : 'Read more ▼'}
+                                </button>)}
                               </div>
                             )}
                           </div>
@@ -611,6 +700,119 @@ function MainApp() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* TAB 1.2: SCRATCH MAP & TRAVEL STATS PROFILE */}
+        {activeTab === 'scratchmap' && (
+          <div className="space-y-8">
+            {/* Traveler Passport Header Card */}
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-800">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                  <span className="bg-emerald-500/20 text-emerald-400 font-bold px-3 py-1 rounded-full text-xs uppercase tracking-widest border border-emerald-500/30">
+                    Official Travel Passport
+                  </span>
+                  <h2 className="text-3xl md:text-4xl font-black mt-3">Traveler Status: {travelerTier}</h2>
+                  <p className="text-slate-400 text-sm mt-1">Personal travel resume and world exploration footprint.</p>
+                </div>
+                <button 
+                  onClick={generateShareLink}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-lg transition-all flex items-center gap-2"
+                >
+                  <span>📤</span> Share Passport With Friends
+                </button>
+              </div>
+
+              {/* Stats Counters Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-slate-800">
+                <div className="bg-white/5 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
+                  <span className="text-slate-400 text-xs font-semibold uppercase block">Countries Visited</span>
+                  <span className="text-3xl font-black text-white mt-1 block">{visitedCountries.length} <span className="text-sm font-normal text-slate-400">/ 195</span></span>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
+                  <span className="text-slate-400 text-xs font-semibold uppercase block">World Explored</span>
+                  <span className="text-3xl font-black text-emerald-400 mt-1 block">{worldPercent}%</span>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
+                  <span className="text-slate-400 text-xs font-semibold uppercase block">Continents</span>
+                  <span className="text-3xl font-black text-indigo-300 mt-1 block">{visitedContinents.length} <span className="text-sm font-normal text-slate-400">/ 7</span></span>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
+                  <span className="text-slate-400 text-xs font-semibold uppercase block">Planned Trips</span>
+                  <span className="text-3xl font-black text-white mt-1 block">{Object.keys(itineraries || {}).length}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Global Interactive Scratch World Map */}
+            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900">Interactive World Scratch Map</h3>
+                  <p className="text-gray-500 text-sm">Glow badges represent countries scratched off your travel bucket list.</p>
+                </div>
+                <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">
+                  {scratchedMapMarkers.length} Countries Active
+                </span>
+              </div>
+
+              <div className="rounded-2xl overflow-hidden border border-gray-200 h-[450px] w-full bg-slate-100 relative z-0">
+                <MapContainer center={[25, 0]} zoom={2} minZoom={1.5} maxZoom={5} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+                  <TileLayer 
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors'
+                  />
+                  {scratchedMapMarkers.map((country, idx) => (
+                    <Marker key={idx} position={country.coords} icon={worldScratchPinIcon}>
+                      <Popup className="font-sans">
+                        <strong className="text-sm block">{country.name}</strong>
+                        <span className="text-xs text-emerald-600 font-bold">✓ Explored & Scratched</span>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
+              </div>
+            </div>
+
+            {/* Interactive Country Scratch Checklist */}
+            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900">Scratch Pad</h3>
+                  <p className="text-gray-500 text-sm">Tap any country to scratch it off or add it to your lifetime traveled list.</p>
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Filter country..." 
+                  className="p-2.5 border border-gray-200 rounded-xl text-sm outline-none w-full md:w-64"
+                  value={countrySearch}
+                  onChange={e => setCountrySearch(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {ALL_COUNTRIES
+                  .filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
+                  .map((country) => {
+                    const isVisited = visitedCountries.includes(country.name);
+                    return (
+                      <button
+                        key={country.code}
+                        onClick={() => toggleCountryVisited(country.name)}
+                        className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between font-bold text-xs ${
+                          isVisited 
+                            ? 'bg-emerald-50 border-emerald-400 text-emerald-900 shadow-sm' 
+                            : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-gray-100 hover:text-gray-700'
+                        }`}
+                      >
+                        <span className="truncate">{country.name}</span>
+                        <span className="text-sm ml-1">{isVisited ? '🏆' : '○'}</span>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
           </div>
         )}
 
@@ -912,30 +1114,12 @@ function MainApp() {
             )}
           </div>
         )}
-
-        {/* TAB 8: TO-DO LIST */}
-        {activeTab === 'todo' && (
-          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">Pre-Trip Checklist</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {todoData.map((item, index) => (
-                <label key={index} className="flex items-start gap-4 p-4 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 cursor-pointer">
-                  <input type="checkbox" className="w-5 h-5 mt-0.5 rounded text-blue-600" />
-                  <div>
-                    <span className="font-bold text-gray-900 block">{item?.activity}</span>
-                    {item?.location && <span className="text-sm text-blue-600 font-medium block mt-1">{item.location}</span>}
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
       </main>
 
       {/* Floating Add Activity Button */}
       <button onClick={() => setIsModalOpen(true)} className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl hover:bg-blue-700 hover:scale-105 transition-all duration-200 flex items-center justify-center text-3xl font-light z-40 print:hidden">+</button>
 
-      {/* Modals */}
+      {/* Add Activity Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -948,7 +1132,7 @@ function MainApp() {
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">Day/Date *</label><input required type="text" placeholder="e.g. Day 1" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.day} onChange={e => setNewActivity({...newActivity, day: e.target.value})} /></div>
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">Time</label><input type="text" placeholder="e.g. 10:00 AM" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.time} onChange={e => setNewActivity({...newActivity, time: e.target.value})} /></div>
               </div>
-              <div><label className="block text-sm font-bold text-gray-700 mb-1">Activity *</label><input required type="text" placeholder="e.g. Walmart" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.activity} onChange={e => setNewActivity({...newActivity, activity: e.target.value})} /></div>
+              <div><label className="block text-sm font-bold text-gray-700 mb-1">Activity *</label><input required type="text" placeholder="e.g. Walmart / Hotel Stay" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.activity} onChange={e => setNewActivity({...newActivity, activity: e.target.value})} /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">Location</label><input type="text" placeholder="e.g. Los Angeles, CA" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.location} onChange={e => setNewActivity({...newActivity, location: e.target.value})} /></div>
                 <div><label className="block text-sm font-bold text-gray-700 mb-1">Cost ($)</label><input type="number" placeholder="e.g. 45" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500" value={newActivity.cost} onChange={e => setNewActivity({...newActivity, cost: e.target.value})} /></div>
@@ -967,6 +1151,7 @@ function MainApp() {
         </div>
       )}
 
+      {/* Add Journal Entry Modal */}
       {isJournalModalOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl">
@@ -987,6 +1172,7 @@ function MainApp() {
         </div>
       )}
 
+      {/* Add Document Modal */}
       {isDocModalOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl">
