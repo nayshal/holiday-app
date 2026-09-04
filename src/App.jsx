@@ -65,12 +65,9 @@ function MainApp() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [addMode, setAddMode] = useState('standard'); 
   const [isIdeaMode, setIsIdeaMode] = useState(false); 
-  const [newActivity, setNewActivity] = useState({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '', paidBy: 'You' });
-  const [newTransit, setNewTransit] = useState({ day: '', depTime: '', arrTime: '', origin: '', destination: '', carrier: '', flightNum: '', cost: '', paidBy: 'You', notes: '' });
+  const [newActivity, setNewActivity] = useState({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '' });
+  const [newTransit, setNewTransit] = useState({ day: '', depTime: '', arrTime: '', origin: '', destination: '', carrier: '', flightNum: '', cost: '', notes: '' });
   const [magicText, setMagicText] = useState('');
-
-  const [groupMembers, setGroupMembers] = useState(['You', 'Wife', 'Angus']);
-  const [newMemberName, setNewMemberName] = useState('');
 
   const [packingItems, setPackingItems] = useState([]);
   const [newPackingText, setNewPackingText] = useState('');
@@ -100,68 +97,74 @@ function MainApp() {
         const { data, error } = await supabase.from('travel_state').select('payload').eq('id', 'main_trip').single();
         
         let cloudTrips = {};
+        let shouldForceUpdate = false;
 
         if (data && data.payload && Object.keys(data.payload).length > 0) {
           const p = data.payload;
           if (p.itineraries) {
             cloudTrips = p.itineraries;
             
-            // SMART INJECTION FIX: Target Canada directly to see if it's the tiny fallback stub.
-            // If it is, inject the full rich data for Canada, Croatia, and USA.
             if (cloudTrips["Canada_Road_Trip"] && cloudTrips["Canada_Road_Trip"].length <= 3) {
-                const detailedTrips = {
-                  "Canada_Road_Trip": [
-                    { day: 'Sept 19', time: '10:00 AM', activity: 'Fly to Seattle', type: 'transit', origin: 'London', destination: 'Seattle', carrier: 'British Airways', cost: '450', paidBy: 'You' },
-                    { day: 'Sept 20', time: '08:00 AM', activity: 'Train to Vancouver', type: 'transit', origin: 'Seattle', destination: 'Vancouver', carrier: 'Amtrak', cost: '65', paidBy: 'You', notes: 'Enjoy the scenic coastal views.' },
-                    { day: 'Sept 21', time: '09:30 AM', activity: 'Flight to Calgary', type: 'transit', origin: 'Vancouver', destination: 'Calgary', carrier: 'Air Canada', cost: '150', paidBy: 'You', notes: 'Pick up rental car at YYC airport.' },
-                    { day: 'Sept 22', time: '08:00 AM', activity: 'Hike Grassi Lakes', location: 'Grassi Lakes Trailhead, Canmore, AB', type: 'standard', cost: '0', paidBy: 'You', notes: 'Beautiful turquoise lakes. Pack bear spray.' },
-                    { day: 'Sept 22', time: '03:00 PM', activity: 'Check-in: Pocaterra Inn', location: 'Canmore, AB', type: 'standard', cost: '200', paidBy: 'You', notes: 'Basecamp for Banff (Sept 22-25).' },
-                    { day: 'Sept 23', time: '05:30 AM', activity: 'Moraine Lake & Larch Valley', location: 'Moraine Lake, AB', type: 'standard', cost: '0', paidBy: 'You', notes: 'Arrive extremely early to secure shuttle parking.' },
-                    { day: 'Sept 24', time: '09:00 AM', activity: 'Rawson Lake Hike', location: 'Kananaskis, AB', type: 'standard', cost: '0', paidBy: 'You' },
-                    { day: 'Sept 25', time: '10:00 AM', activity: 'Drive Icefields Parkway', location: 'Icefields Parkway, AB', type: 'standard', cost: '0', paidBy: 'You' },
-                    { day: 'Sept 25', time: '01:00 PM', activity: 'Columbia Icefield Glacier Adventure & Skywalk', location: 'Columbia Icefield, AB', type: 'standard', cost: '85', paidBy: 'Wife', notes: 'Pre-booked tickets required.' },
-                    { day: 'Sept 25', time: '04:00 PM', activity: 'Check-in: Velora Hotel', location: 'Hinton, AB', type: 'standard', cost: '180', paidBy: 'Wife', notes: 'Basecamp for Jasper (Sept 25-28).' },
-                    { day: 'Sept 26', time: '08:30 AM', activity: 'Valley of the Five Lakes', location: 'Jasper, AB', type: 'standard', cost: '0', paidBy: 'You' },
-                    { day: 'Sept 27', time: '09:00 AM', activity: 'Maligne Lake & Pyramid Lake', location: 'Maligne Lake, AB', type: 'standard', cost: '0', paidBy: 'You' },
-                    { day: 'Sept 28', time: '03:00 PM', activity: 'Check-in: Vagabond Lodge', location: 'Golden, BC', type: 'standard', cost: '210', paidBy: 'You', notes: 'Basecamp for Yoho & Glacier (Sept 28-30).' },
-                    { day: 'Sept 29', time: '09:00 AM', activity: 'Takakkaw Falls & Wapta Falls', location: 'Yoho National Park, BC', type: 'standard', cost: '0', paidBy: 'You' },
-                    { day: 'Oct 3', time: '10:00 AM', activity: 'Flight Home', type: 'transit', origin: 'Calgary', destination: 'London', carrier: 'Air Canada', cost: '450', paidBy: 'You' }
-                  ],
-                  "Croatia_Stag_Do": [
-                    { day: 'Sept 11', time: '08:00 AM', activity: 'Depart for Split', type: 'transit', origin: 'London Luton Airport', destination: 'Split, Croatia', carrier: 'EasyJet', cost: '120', paidBy: 'You', notes: 'Angus’s Stag Do!' },
-                    { day: 'Sept 11', time: '08:00 PM', activity: 'Dinner at Bokamorra', location: 'Bokamorra, Split, Croatia', type: 'standard', cost: '40', paidBy: 'Angus', notes: 'Pizza and cocktails to kick off the weekend.' },
-                    { day: 'Sept 12', time: '11:00 AM', activity: 'Private Party Boat', location: 'Split Harbor, Croatia', type: 'standard', cost: '150', paidBy: 'You', notes: 'Bring low-calorie tequila.' },
-                    { day: 'Sept 12', time: '08:00 PM', activity: 'Dinner at Buffet Fife', location: 'Buffet Fife, Split, Croatia', type: 'standard', cost: '25', paidBy: 'You', notes: 'Traditional Croatian meal.' },
-                    { day: 'Sept 13', time: '08:00 PM', activity: 'Dinner at Fabrique', location: 'Fabrique, Split, Croatia', type: 'standard', cost: '50', paidBy: 'Angus', notes: 'BBQ and drinks.' },
-                    { day: 'Sept 14', time: '11:00 AM', activity: 'Flight Home', type: 'transit', origin: 'Split, Croatia', destination: 'London', carrier: 'EasyJet', cost: '120', paidBy: 'You' }
-                  ],
-                  "USA_Road_Trip": [
-                    { day: 'Day 1', time: '10:00 AM', activity: 'Arrive in LA', location: 'Los Angeles, CA', type: 'standard', cost: '0', paidBy: 'You' },
-                    { day: 'Day 2', time: '09:00 AM', activity: 'Universal Studios', location: 'Universal Studios Hollywood', type: 'standard', cost: '109', paidBy: 'You' },
-                    { day: 'Day 3', time: '11:00 AM', activity: 'Walk of Fame & Griffith Observatory', location: 'Griffith Observatory, LA', type: 'standard', cost: '0', paidBy: 'You' },
-                    { day: 'Day 4', time: '08:00 AM', activity: 'Drive to San Diego', type: 'transit', origin: 'Los Angeles', destination: 'San Diego', carrier: 'Car', cost: '20', paidBy: 'You' },
-                    { day: 'Day 5', time: '10:00 AM', activity: 'San Diego Zoo', location: 'San Diego Zoo', type: 'standard', cost: '65', paidBy: 'You' },
-                    { day: 'Day 7', time: '08:00 AM', activity: 'Grand Canyon Skydiving & South Rim', location: 'Grand Canyon National Park', type: 'standard', cost: '250', paidBy: 'You' },
-                    { day: 'Day 9', time: '07:00 PM', activity: 'Concert & Shooting Range', location: 'Las Vegas, NV', type: 'standard', cost: '150', paidBy: 'You' },
-                    { day: 'Day 12', time: '10:00 AM', activity: 'Alcatraz Tour', location: 'Alcatraz Island, San Francisco', type: 'standard', cost: '45', paidBy: 'You' },
-                    { day: 'Day 14', time: '12:00 PM', activity: 'Wine Tasting', location: 'Napa Valley, CA', type: 'standard', cost: '80', paidBy: 'You' },
-                    { day: 'Day 16', time: '09:00 AM', activity: 'Runyon Canyon Hike & Flight Home', location: 'Runyon Canyon, LA', type: 'standard', cost: '0', paidBy: 'You' }
-                  ]
-                };
-                
-                // This merges the rich data right over the stub, leaving your Paris/Prague data perfectly intact!
-                cloudTrips = { ...cloudTrips, ...detailedTrips }; 
+                shouldForceUpdate = true;
+            } else {
+                setItineraries(p.itineraries);
+                if (!selectedTrip && Object.keys(p.itineraries).length > 0) setSelectedTrip(Object.keys(p.itineraries)[0]);
             }
-
-            setItineraries(cloudTrips);
-            if (!selectedTrip && Object.keys(cloudTrips).length > 0) setSelectedTrip(Object.keys(cloudTrips)[0]);
           }
           if (p.packingItems) setPackingItems(p.packingItems);
           if (p.journalEntries) setJournalEntries(p.journalEntries);
           if (p.vaultDocs) setVaultDocs(p.vaultDocs);
           if (p.visitedCountries) setVisitedCountries(p.visitedCountries);
-          if (p.groupMembers) setGroupMembers(p.groupMembers);
+        } else {
+          shouldForceUpdate = true;
         }
+
+        if (shouldForceUpdate) {
+            const detailedTrips = {
+              "Canada_Road_Trip": [
+                { day: 'Sept 19', time: '10:00 AM', activity: 'Fly to Seattle', type: 'transit', origin: 'London', destination: 'Seattle', carrier: 'British Airways', cost: '450' },
+                { day: 'Sept 20', time: '08:00 AM', activity: 'Train to Vancouver', type: 'transit', origin: 'Seattle', destination: 'Vancouver', carrier: 'Amtrak', cost: '65', notes: 'Enjoy the scenic coastal views.' },
+                { day: 'Sept 21', time: '09:30 AM', activity: 'Flight to Calgary', type: 'transit', origin: 'Vancouver', destination: 'Calgary', carrier: 'Air Canada', cost: '150', notes: 'Pick up rental car at YYC airport.' },
+                { day: 'Sept 22', time: '08:00 AM', activity: 'Hike Grassi Lakes', location: 'Grassi Lakes Trailhead, Canmore, AB', type: 'standard', cost: '0', notes: 'Beautiful turquoise lakes. Pack bear spray.' },
+                { day: 'Sept 22', time: '03:00 PM', activity: 'Check-in: Pocaterra Inn', location: 'Canmore, AB', type: 'standard', cost: '200', notes: 'Basecamp for Banff (Sept 22-25).' },
+                { day: 'Sept 23', time: '05:30 AM', activity: 'Moraine Lake & Larch Valley', location: 'Moraine Lake, AB', type: 'standard', cost: '0', notes: 'Arrive extremely early to secure shuttle parking.' },
+                { day: 'Sept 24', time: '09:00 AM', activity: 'Rawson Lake Hike', location: 'Kananaskis, AB', type: 'standard', cost: '0' },
+                { day: 'Sept 25', time: '10:00 AM', activity: 'Drive Icefields Parkway', location: 'Icefields Parkway, AB', type: 'standard', cost: '0' },
+                { day: 'Sept 25', time: '01:00 PM', activity: 'Columbia Icefield Glacier Adventure & Skywalk', location: 'Columbia Icefield, AB', type: 'standard', cost: '85', notes: 'Pre-booked tickets required.' },
+                { day: 'Sept 25', time: '04:00 PM', activity: 'Check-in: Velora Hotel', location: 'Hinton, AB', type: 'standard', cost: '180', notes: 'Basecamp for Jasper (Sept 25-28).' },
+                { day: 'Sept 26', time: '08:30 AM', activity: 'Valley of the Five Lakes', location: 'Jasper, AB', type: 'standard', cost: '0' },
+                { day: 'Sept 27', time: '09:00 AM', activity: 'Maligne Lake & Pyramid Lake', location: 'Maligne Lake, AB', type: 'standard', cost: '0' },
+                { day: 'Sept 28', time: '03:00 PM', activity: 'Check-in: Vagabond Lodge', location: 'Golden, BC', type: 'standard', cost: '210', notes: 'Basecamp for Yoho & Glacier (Sept 28-30).' },
+                { day: 'Sept 29', time: '09:00 AM', activity: 'Takakkaw Falls & Wapta Falls', location: 'Yoho National Park, BC', type: 'standard', cost: '0' },
+                { day: 'Oct 3', time: '10:00 AM', activity: 'Flight Home', type: 'transit', origin: 'Calgary', destination: 'London', carrier: 'Air Canada', cost: '450' }
+              ],
+              "Croatia_Stag_Do": [
+                { day: 'Sept 11', time: '08:00 AM', activity: 'Depart for Split', type: 'transit', origin: 'London Luton Airport', destination: 'Split, Croatia', carrier: 'EasyJet', cost: '120', notes: 'Angus’s Stag Do!' },
+                { day: 'Sept 11', time: '08:00 PM', activity: 'Dinner at Bokamorra', location: 'Bokamorra, Split, Croatia', type: 'standard', cost: '40', notes: 'Pizza and cocktails to kick off the weekend.' },
+                { day: 'Sept 12', time: '11:00 AM', activity: 'Private Party Boat', location: 'Split Harbor, Croatia', type: 'standard', cost: '150', notes: 'Bring low-calorie tequila.' },
+                { day: 'Sept 12', time: '08:00 PM', activity: 'Dinner at Buffet Fife', location: 'Buffet Fife, Split, Croatia', type: 'standard', cost: '25', notes: 'Traditional Croatian meal.' },
+                { day: 'Sept 13', time: '08:00 PM', activity: 'Dinner at Fabrique', location: 'Fabrique, Split, Croatia', type: 'standard', cost: '50', notes: 'BBQ and drinks.' },
+                { day: 'Sept 14', time: '11:00 AM', activity: 'Flight Home', type: 'transit', origin: 'Split, Croatia', destination: 'London', carrier: 'EasyJet', cost: '120' }
+              ],
+              "USA_Road_Trip": [
+                { day: 'Day 1', time: '10:00 AM', activity: 'Arrive in LA', location: 'Los Angeles, CA', type: 'standard', cost: '0' },
+                { day: 'Day 2', time: '09:00 AM', activity: 'Universal Studios', location: 'Universal Studios Hollywood', type: 'standard', cost: '109' },
+                { day: 'Day 3', time: '11:00 AM', activity: 'Walk of Fame & Griffith Observatory', location: 'Griffith Observatory, LA', type: 'standard', cost: '0' },
+                { day: 'Day 4', time: '08:00 AM', activity: 'Drive to San Diego', type: 'transit', origin: 'Los Angeles', destination: 'San Diego', carrier: 'Car', cost: '20' },
+                { day: 'Day 5', time: '10:00 AM', activity: 'San Diego Zoo', location: 'San Diego Zoo', type: 'standard', cost: '65' },
+                { day: 'Day 7', time: '08:00 AM', activity: 'Grand Canyon Skydiving & South Rim', location: 'Grand Canyon National Park', type: 'standard', cost: '250' },
+                { day: 'Day 9', time: '07:00 PM', activity: 'Concert & Shooting Range', location: 'Las Vegas, NV', type: 'standard', cost: '150' },
+                { day: 'Day 12', time: '10:00 AM', activity: 'Alcatraz Tour', location: 'Alcatraz Island, San Francisco', type: 'standard', cost: '45' },
+                { day: 'Day 14', time: '12:00 PM', activity: 'Wine Tasting', location: 'Napa Valley, CA', type: 'standard', cost: '80' },
+                { day: 'Day 16', time: '09:00 AM', activity: 'Runyon Canyon Hike & Flight Home', location: 'Runyon Canyon, LA', type: 'standard', cost: '0' }
+              ]
+            };
+            
+            cloudTrips = { ...cloudTrips, ...detailedTrips }; 
+            setItineraries(cloudTrips);
+            if (!selectedTrip && Object.keys(cloudTrips).length > 0) setSelectedTrip(Object.keys(cloudTrips)[0]);
+        }
+
       } catch (err) {
         console.error("Cloud connection failed. Falling back.", err);
       } finally {
@@ -178,7 +181,7 @@ function MainApp() {
     if (!isCloudLoaded) return;
     
     setSyncStatus('☁️ Syncing...');
-    const payload = { itineraries, packingItems, journalEntries, vaultDocs, visitedCountries, groupMembers };
+    const payload = { itineraries, packingItems, journalEntries, vaultDocs, visitedCountries };
     
     const delayDebounceFn = setTimeout(async () => {
       try {
@@ -191,7 +194,7 @@ function MainApp() {
     }, 1500); 
 
     return () => clearTimeout(delayDebounceFn);
-  }, [itineraries, packingItems, journalEntries, vaultDocs, visitedCountries, groupMembers, isCloudLoaded]);
+  }, [itineraries, packingItems, journalEntries, vaultDocs, visitedCountries, isCloudLoaded]);
 
   useEffect(() => { localStorage.setItem('travelGeoCache', JSON.stringify(geoCache || {})); }, [geoCache]);
 
@@ -407,8 +410,8 @@ function MainApp() {
     setItineraries(updatedTrips);
     setIsModalOpen(false);
     setIsIdeaMode(false);
-    setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '', paidBy: 'You' });
-    setNewTransit({ day: '', depTime: '', arrTime: '', origin: '', destination: '', carrier: '', flightNum: '', cost: '', paidBy: 'You', notes: '' });
+    setNewActivity({ day: '', time: '', activity: '', location: '', notes: '', cost: '', photo: '' });
+    setNewTransit({ day: '', depTime: '', arrTime: '', origin: '', destination: '', carrier: '', flightNum: '', cost: '', notes: '' });
   };
 
   const handleGenerateAiTrip = async (e) => {
@@ -477,8 +480,6 @@ function MainApp() {
   const scratchedMapMarkers = ALL_COUNTRIES.filter(c => visitedCountries.includes(c.name));
   const categoryTotals = { Food: 0, Transport: 0, Hotel: 0, Activity: 0, Nightlife: 0, Other: 0 };
   let totalBudget = 0;
-  const memberPaidTotals = {};
-  (Array.isArray(groupMembers) ? groupMembers : []).forEach(m => memberPaidTotals[m] = 0);
 
   currentTripData.forEach(item => {
     const val = parseFloat(item?.cost || 0);
@@ -486,18 +487,14 @@ function MainApp() {
       totalBudget += val;
       const cat = getCategory(item?.activity);
       categoryTotals[cat] = (categoryTotals[cat] || 0) + val;
-      const payer = item?.paidBy || 'You';
-      memberPaidTotals[payer] = (memberPaidTotals[payer] || 0) + val;
     }
   });
 
-  const fairSharePerPerson = (groupMembers || []).length > 0 ? totalBudget / groupMembers.length : 0;
-
   const exportCSV = () => {
     const data = itineraries[selectedTrip] || [];
-    let csvContent = "data:text/csv;charset=utf-8,Day,Time,Activity,Location,Cost,Paid By,Notes\n";
+    let csvContent = "data:text/csv;charset=utf-8,Day,Time,Activity,Location,Cost,Notes\n";
     data.forEach(item => {
-      const row = [ `"${(item?.day || '').replace(/"/g, '""')}"`, `"${(item?.time || item?.depTime || '').replace(/"/g, '""')}"`, `"${(item?.activity || '').replace(/"/g, '""')}"`, `"${(item?.location || item?.destination || '').replace(/"/g, '""')}"`, `"${(item?.cost || '').replace(/"/g, '""')}"`, `"${(item?.paidBy || 'You').replace(/"/g, '""')}"`, `"${(item?.notes || '').replace(/"/g, '""')}"` ];
+      const row = [ `"${(item?.day || '').replace(/"/g, '""')}"`, `"${(item?.time || item?.depTime || '').replace(/"/g, '""')}"`, `"${(item?.activity || '').replace(/"/g, '""')}"`, `"${(item?.location || item?.destination || '').replace(/"/g, '""')}"`, `"${(item?.cost || '').replace(/"/g, '""')}"`, `"${(item?.notes || '').replace(/"/g, '""')}"` ];
       csvContent += row.join(",") + "\n";
     });
     const encodedUri = encodeURI(csvContent);
@@ -577,7 +574,6 @@ function MainApp() {
           <button onClick={() => setActiveTab('scratchmap')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'scratchmap' ? 'bg-emerald-600 text-white shadow-md' : 'text-emerald-700 hover:bg-emerald-50'}`}>🏆 Scratch Map</button>
           <button onClick={() => setActiveTab('map')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'map' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>📍 Trip Map</button>
           <button onClick={() => setActiveTab('budget')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>💰 Budget</button>
-          <button onClick={() => setActiveTab('split')} className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm whitespace-nowrap ${activeTab === 'split' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>⚖️ Split</button>
         </div>
 
         {/* LIVE WEATHER WIDGET */}
@@ -676,7 +672,7 @@ function MainApp() {
                             <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 mb-2">
                               <h4 className="text-lg font-bold text-gray-900 leading-tight pr-4">{item?.activity}</h4>
                               <div className="flex items-center gap-2 flex-wrap">
-                                {item?.cost && <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full print:border print:border-emerald-300">${item.cost} (Paid by {item.paidBy || 'You'})</span>}
+                                {item?.cost && <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full print:border print:border-emerald-300">${item.cost}</span>}
                                 {item?.time && <span className="shrink-0 bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide print:border print:border-gray-300">{item.time}</span>}
                               </div>
                             </div>
@@ -787,27 +783,6 @@ function MainApp() {
             <h3 className="text-2xl font-black text-gray-900 mb-6">Trip Expense Dashboard</h3>
             <div className="bg-slate-900 text-white rounded-2xl p-6 mb-8 flex justify-between items-center shadow-md">
               <div><span className="text-slate-400 text-xs uppercase font-bold block mb-1">Total Expenses</span><span className="text-4xl font-black text-emerald-400">${totalBudget.toFixed(2)}</span></div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB SPLIT */}
-        {activeTab === 'split' && (
-          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 print-hide">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">Group Expense Splitter</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(groupMembers || []).map((member) => {
-                const paid = memberPaidTotals[member] || 0;
-                const balance = paid - fairSharePerPerson;
-                return (
-                  <div key={member} className="p-5 rounded-2xl border border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <div><span className="font-black text-lg text-gray-900 block">{member}</span></div>
-                    <div className="text-right">
-                      {balance >= 0 ? <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-full">Owed +${balance.toFixed(2)}</span> : <span className="bg-red-100 text-red-800 text-xs font-bold px-3 py-1.5 rounded-full">Owes -${Math.abs(balance).toFixed(2)}</span>}
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
         )}
